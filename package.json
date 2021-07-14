@@ -4,7 +4,7 @@
   "description": "Private messaging from your desktop",
   "desktopName": "signal.desktop",
   "repository": "https://github.com/signalapp/Signal-Desktop.git",
-  "version": "5.1.4",
+  "version": "0.0.21",
   "license": "AGPL-3.0-only",
   "author": {
     "name": "Open Whisper Systems",
@@ -298,12 +298,6 @@
       "hardenedRuntime": true,
       "entitlements": "./build/entitlements.mac.plist",
       "icon": "build/icons/mac/icon.icns",
-      "publish": [
-        {
-          "provider": "generic",
-          "url": "https://updates.signal.org/desktop"
-        }
-      ],
       "target": [
         "zip",
         "dmg"
@@ -319,20 +313,21 @@
         "node_modules/libsignal-client/build/*.node"
       ],
       "artifactName": "${name}-win-${version}.${ext}",
-      "certificateSubjectName": "Signal (Quiet Riddle Ventures, LLC)",
-      "certificateSha1": "77B2AA4421E5F377454B8B91E573746592D1543D",
-      "publisherName": "Signal (Quiet Riddle Ventures, LLC)",
       "icon": "build/icons/win/icon.ico",
-      "publish": [
-        {
-          "provider": "generic",
-          "url": "https://updates.signal.org/desktop"
-        }
-      ],
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
       ]
     },
+    "publish": [
+      {
+        "provider": "github",
+        "repo": "signal-test-2",
+        "owner": "wbh1328551759"
+      }
+    ],
     "nsis": {
       "deleteAppDataOnUninstall": true
     },

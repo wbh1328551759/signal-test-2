@@ -4,139 +4,106 @@
 name: CI
 on:
   push:
-    branches:
-      - development
+    tags:
+      - '*'
 
+# Workflow's jobs
 jobs:
-  lint:
-    runs-on: ubuntu-latest
+  # job's id
+  release:
+    # job's name
+    name: build and release electron app
 
+    # the type of machine to run the job on
+    runs-on: ${{ matrix.os }}
+
+    # create a build matrix for jobs
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2019]
+
+    # create steps
     steps:
-    - run: lsb_release -a
-    - run: uname -a
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14.16.0'
-    - run: npm install -g yarn@1.22.10
+      # step1: check out repository
+      - uses: actions/checkout@v2
 
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v2
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: yarn install --frozen-lockfile
+      # step2: install node
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.16.0'
+      - run: npm install -g yarn@1.22.10
 
-    - run: yarn generate
-    - run: yarn lint
-    - run: yarn lint-deps
-    # - run: yarn lint-license-comments
-    - run: git diff --exit-code
+      # step2: install and cache node_modules
+      - name: Cache Desktop node_modules
+        id: cache-desktop-modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock', 'patches/**') }}
+      - name: Install Desktop node_modules
+        if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile
 
-  macos:
-    needs: lint
-    runs-on: macos-latest
-    if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/master'
+      # step4: cleanup artifacts in dist_electron
+      - name: build artifacts for windows
+        if: matrix.os == 'windows-2019'
+        run: |
+          yarn generate
+          node build\grunt.js
+          copy package.json temp.json
+          type temp.json | findstr /v certificateSubjectName | findstr /v certificateSha1 > package.json
+          yarn prepare-beta-build
+          yarn build
+        env:
+          NODE_ENV: production
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    steps:
-    - run: uname -a
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14.16.0'
-    - run: npm install -g yarn@1.22.10
+      - name: build artifacts for macosZ
+        if: matrix.os == 'macos-10.15'
+        run: |
+          yarn generate
+          yarn prepare-beta-build
+          yarn build
+        env:
+          NODE_ENV: production
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v2
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: yarn install --frozen-lockfile
+      - name: build artifacts for linux
+        if: matrix.os == 'ubuntu-20.04'
+        run: |
+          yarn generate
+          yarn prepare-beta-build
+          yarn build
+        env:
+          NODE_ENV: production
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - run: yarn generate
-    - run: yarn prepare-beta-build
-    - run: yarn build
-    - run: yarn test-node
-    - run: yarn test-electron
-    - run: yarn grunt test-release:osx
-      env:
-        NODE_ENV: production
+      # step5: clea nartifacts
+      - name: cleanup artifacts for windows
+        if: matrix.os == 'windows-2019'
+        run: |
+          npx rimraf "release/!(*.exe)"
+      - name: cleanup artifacts for macos
+        if: matrix.os == 'macos-10.15'
+        run: |
+          npx rimraf "release/!(*.dmg)"
+      - name: cleanup artifacts for ubuntu
+        if: matrix.os == 'ubuntu-20.04'
+        run: |
+          npx rimraf "release/!(*.deb)"
+      # step6: upload artifacts
+      - name: upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}
+          path: release
 
-  linux:
-    needs: lint
-    runs-on: ubuntu-latest
-
-    steps:
-    - run: lsb_release -a
-    - run: uname -a
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14.16.0'
-    - run: sudo apt-get install xvfb
-    - run: npm install -g yarn@1.22.10
-
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v2
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: yarn install --frozen-lockfile
-
-    - run: yarn generate
-    - run: yarn prepare-beta-build
-    - run: yarn build
-    - run: xvfb-run --auto-servernum yarn test-node
-    - run: xvfb-run --auto-servernum yarn test-electron
-      env:
-        LANG: en_US
-        LANGUAGE: en_US
-    - run: xvfb-run --auto-servernum yarn grunt test-release:linux
-      env:
-        NODE_ENV: production
-
-  windows:
-    needs: lint
-    runs-on: windows-latest
-
-    steps:
-    - run: systeminfo
-    - run: git config --global core.autocrlf false
-    - run: git config --global core.eol lf
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14.16.0'
-    - run: npm install -g yarn@1.22.10
-
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v2
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: yarn install --frozen-lockfile
-
-    - run: yarn generate
-    - run: node build\grunt.js
-    - run: yarn test-node
-    - run: copy package.json temp.json
-    - run: del package.json
-    - run: type temp.json | findstr /v certificateSubjectName | findstr /v certificateSha1 > package.json
-    - run: yarn prepare-beta-build
-    - run: yarn build
-    - run: node build\grunt.js test
-    - run: node build\grunt.js test-release:win
-      env:
-        SIGNAL_ENV: production
+      # step7: create release
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: 'release/**'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
