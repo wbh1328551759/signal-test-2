@@ -39,7 +39,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: cleanup artifacts for windows
-          if: matrix.os == 'windows-2019'
           run: |
             npx rimraf "release/!(*.exe)"
 
