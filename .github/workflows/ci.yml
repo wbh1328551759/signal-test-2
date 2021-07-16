@@ -28,6 +28,7 @@ jobs:
       - name: Install Desktop node_modules
         run: |
           yarn install --frozen-lockfile
+          yarn add electron-updater
 
       - name: build artifacts for windows
         run: |

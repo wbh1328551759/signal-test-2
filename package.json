@@ -84,8 +84,6 @@
     "config": "1.28.1",
     "copy-text-to-clipboard": "2.1.0",
     "dashdash": "1.14.1",
-    "electron-updater": "^4.3.9",
-
     "emoji-datasource": "6.0.0",
     "emoji-datasource-apple": "6.0.0",
     "emoji-regex": "9.2.0",
