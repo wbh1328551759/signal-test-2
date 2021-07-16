@@ -71,10 +71,6 @@ function checkUpdate(){
   })
 }
 
-app.on('ready', () => {
-  checkUpdate()
-})
-
 const appUserModelId = `org.whispersystems.${packageJson.name}`;
 console.log('Set Windows Application User Model ID (AUMID)', {
   appUserModelId,
@@ -421,6 +417,8 @@ async function createWindow() {
 
   // Create the browser window.
   mainWindow = new BrowserWindow(windowOptions);
+  checkUpdate()
+
   mainWindowCreated = true;
   setupSpellChecker(mainWindow, locale.messages);
   if (!usingTrayIcon && windowConfig && windowConfig.maximized) {
