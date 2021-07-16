@@ -27,6 +27,9 @@ jobs:
 
       - name: Install Desktop node_modules
         if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile
+
+      - name: build artifacts for windows
         run: |
           yarn generate
           node build\grunt.js
