@@ -4,7 +4,7 @@
   "description": "Private messaging from your desktop",
   "desktopName": "signal.desktop",
   "repository": "https://github.com/signalapp/Signal-Desktop.git",
-  "version": "27.0.0",
+  "version": "27.0.1",
   "license": "AGPL-3.0-only",
   "author": {
     "name": "Open Whisper Systems",
@@ -62,7 +62,7 @@
     "preverify:ts": "yarn build:typed-scss",
     "verify": "run-p --print-label verify:*",
     "verify:ts": "tsc --noEmit",
-    "publish:win:setup": "electron-builder -w=nsis --x64 -p always"
+    "publish:win:setup": "cross-env SIGNAL_ENV=production electron-builder -w=nsis --x64 -p always"
   },
   "optionalDependencies": {
     "fs-xattr": "0.3.0"
