@@ -39,11 +39,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: cleanup artifacts for windows
-          run: |
+          run:
             npx rimraf "release/!(*.exe)"
 
       - name: Release package
-        run: |
+        run:
           yarn publish:win:setup
 
         env:
