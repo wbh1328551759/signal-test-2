@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const normalizePath = require('normalize-path');
 const fg = require('fast-glob');
 const PQueue = require('p-queue').default;
+const { autoUpdater } = require('electron-updater');
 
 const _ = require('lodash');
 const pify = require('pify');
@@ -41,6 +42,38 @@ const {
   shell,
   systemPreferences,
 } = electron;
+
+function checkUpdate(){
+  autoUpdater.checkForUpdates()
+
+  autoUpdater.on('error', (err) => {
+    console.log(err)
+  })
+
+  autoUpdater.on('update-available', () => {
+    console.log('found new version')
+  })
+
+
+  autoUpdater.on('update-downloaded', () => {
+    // eslint-disable-next-line more/no-then
+    dialog.showMessageBox({
+      type: 'info',
+      title: '应用更新',
+      message: '发现新版本，是否更新？',
+      buttons: ['是', '否'],
+    }).then((buttonIndex) => {
+      if(buttonIndex.response === 0) {
+        autoUpdater.quitAndInstall()
+        app.quit()
+      }
+    })
+  })
+}
+
+app.on('ready', () => {
+  checkUpdate()
+})
 
 const appUserModelId = `org.whispersystems.${packageJson.name}`;
 console.log('Set Windows Application User Model ID (AUMID)', {
