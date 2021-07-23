@@ -64,20 +64,20 @@ function checkUpdate(){
     console.log('found new version')
   })
 
-  autoUpdater.on('update-downloaded', () => {
-    // eslint-disable-next-line more/no-then
-    dialog.showMessageBox({
-      type: 'info',
-      title: '应用更新',
-      message: '发现新版本，是否更新？',
-      buttons: ['是', '否'],
-    }).then((buttonIndex) => {
-      if(buttonIndex.response === 0) {
-        autoUpdater.quitAndInstall()
-        app.quit()
-      }
-    })
-  })
+  // autoUpdater.on('update-downloaded', () => {
+  //   // eslint-disable-next-line more/no-then
+  //   dialog.showMessageBox({
+  //     type: 'info',
+  //     title: '应用更新',
+  //     message: '发现新版本，是否更新？',
+  //     buttons: ['是', '否'],
+  //   }).then((buttonIndex) => {
+  //     if(buttonIndex.response === 0) {
+  //       autoUpdater.quitAndInstall()
+  //       app.quit()
+  //     }
+  //   })
+  // })
 }
 
 function downloadUpdate(cancellationToken) {

@@ -26,8 +26,12 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('yarn.lock', 'patches/**') }}
 
       - name: Install Desktop node_modules
+        if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
         run: |
           yarn install --frozen-lockfile
+
+      - name: Install Desktop node_modules
+        run: |
           yarn add electron-updater
 
       - name: build artifacts for windows
