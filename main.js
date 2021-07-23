@@ -45,25 +45,24 @@ const {
 
 function checkUpdate(){
   // eslint-disable-next-line more/no-then
-  autoUpdater.checkForUpdates()
+  autoUpdater.on('checking-for-update', () => {
+    console.log('checking for update')
+  })
 
-  autoUpdater.on('error', (error) => {
-    if (error) {
-      dialog.showMessageBox({
-        type: 'info',
-        title: '更新失败',
-        message: '自动更新失败，请自行前往下载',
-        buttons: ['下载地址','取消'],
-      }).then((buttonIndex) => {
-        if(buttonIndex.response === 0) {
-          shell.openExternal('http://www.baidu.com');
-        }
-      })
-    }
+  autoUpdater.on('error', (err) => {
+    console.log(err)
   })
 
   autoUpdater.on('update-available', () => {
     console.log('found new version')
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('found no new version')
+  })
+
+  autoUpdater.on('download-progress', () => {
+    console.log('downloading...')
   })
 
   autoUpdater.on('update-downloaded', () => {
@@ -80,6 +79,31 @@ function checkUpdate(){
       }
     })
   })
+}
+
+function downloadUpdate(cancellationToken) {
+  // eslint-disable-next-line more/no-then
+  autoUpdater.downloadUpdate(cancellationToken).then((file) => {
+    // eslint-disable-next-line more/no-then
+    dialog.showMessageBox({
+      type: 'info',
+      title: '应用更新',
+      message: '发现新版本，是否更新？',
+      buttons: ['是', '否'],
+    }).then((buttonIndex) => {
+      if(buttonIndex.response === 0) {
+        autoUpdater.quitAndInstall()
+        app.quit()
+      }
+    })
+  }).catch((error) => {
+    if (isNetworkError(error)) {
+      console.log('Network Error');
+    } else {
+      console.log('Unknown Error');
+      console.log(error == null ? 'unknown' : (error.stack || error).toString());
+    }
+  });
 }
 
 function isNetworkError(errorObject) {
