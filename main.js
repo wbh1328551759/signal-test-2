@@ -46,23 +46,19 @@ const {
 function checkUpdate(){
   // eslint-disable-next-line more/no-then
   autoUpdater.on('checking-for-update', () => {
-    console.log('checking for update')
-  })
-
-  autoUpdater.on('error', (err) => {
-    console.log(err)
+    logger('checking for update')
   })
 
   autoUpdater.on('update-available', () => {
-    console.log('found new version')
+    logger('found new version')
   })
 
   autoUpdater.on('update-not-available', () => {
-    console.log('found no new version')
+    logger('found no new version')
   })
 
   autoUpdater.on('download-progress', () => {
-    console.log('downloading...')
+    logger('downloading...')
   })
 
   autoUpdater.on('update-downloaded', () => {
@@ -78,6 +74,11 @@ function checkUpdate(){
         app.quit()
       }
     })
+  })
+
+
+  autoUpdater.on('error', (err) => {
+    logger(err)
   })
 }
 
