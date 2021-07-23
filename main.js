@@ -44,7 +44,17 @@ const {
 } = electron;
 
 function checkUpdate(){
-  autoUpdater.checkForUpdates()
+  // eslint-disable-next-line more/no-then
+  autoUpdater.checkForUpdates().then((info) => {
+    downloadUpdate(info.cancellationToken);
+  }).catch((error) => {
+    if (isNetworkError(error)) {
+      console.log('Network Error');
+    } else {
+      console.log('Unknown Error');
+      console.log(error == null ? 'unknown' : (error.stack || error).toString());
+    }
+  });
 
   autoUpdater.on('error', (err) => {
     console.log(err)
@@ -53,7 +63,6 @@ function checkUpdate(){
   autoUpdater.on('update-available', () => {
     console.log('found new version')
   })
-
 
   autoUpdater.on('update-downloaded', () => {
     // eslint-disable-next-line more/no-then
@@ -69,6 +78,40 @@ function checkUpdate(){
       }
     })
   })
+}
+
+function downloadUpdate(cancellationToken) {
+  // eslint-disable-next-line more/no-then
+  autoUpdater.downloadUpdate(cancellationToken).then((file) => {
+    // eslint-disable-next-line more/no-then
+    dialog.showMessageBox({
+      type: 'info',
+      title: '应用更新',
+      message: '发现新版本，是否更新？',
+      buttons: ['是', '否'],
+    }).then((buttonIndex) => {
+      if(buttonIndex.response === 0) {
+        autoUpdater.quitAndInstall()
+        app.quit()
+      }
+    })
+  }).catch((error) => {
+    if (isNetworkError(error)) {
+      console.log('Network Error');
+    } else {
+      console.log('Unknown Error');
+      console.log(error == null ? 'unknown' : (error.stack || error).toString());
+    }
+  });
+}
+
+function isNetworkError(errorObject) {
+  return errorObject.message === 'net::ERR_INTERNET_DISCONNECTED' ||
+    errorObject.message === 'net::ERR_PROXY_CONNECTION_FAILED' ||
+    errorObject.message === 'net::ERR_CONNECTION_RESET' ||
+    errorObject.message === 'net::ERR_CONNECTION_CLOSE' ||
+    errorObject.message === 'net::ERR_NAME_NOT_RESOLVED' ||
+    errorObject.message === 'net::ERR_CONNECTION_TIMED_OUT';
 }
 
 const appUserModelId = `org.whispersystems.${packageJson.name}`;
