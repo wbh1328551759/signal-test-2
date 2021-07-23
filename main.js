@@ -44,42 +44,61 @@ const {
 } = electron;
 
 function checkUpdate(){
+  console.log('checkUpdate checkUpdate checkUpdate')
+  autoUpdater.setFeedURL({
+    "provider": "github",
+    "repo": "signal-test-2",
+    "owner": "wbh1328551759"
+  })
+
   // eslint-disable-next-line more/no-then
-  autoUpdater.on('checking-for-update', () => {
-    logger('checking for update')
-  })
-
-  autoUpdater.on('update-available', () => {
-    logger('found new version')
-  })
-
-  autoUpdater.on('update-not-available', () => {
-    logger('found no new version')
-  })
-
-  autoUpdater.on('download-progress', () => {
-    logger('downloading...')
-  })
-
-  autoUpdater.on('update-downloaded', () => {
-    // eslint-disable-next-line more/no-then
-    dialog.showMessageBox({
-      type: 'info',
-      title: '应用更新',
-      message: '发现新版本，是否更新？',
-      buttons: ['是', '否'],
-    }).then((buttonIndex) => {
-      if(buttonIndex.response === 0) {
-        autoUpdater.quitAndInstall()
-        app.quit()
+  autoUpdater.checkForUpdates()
+    .then((info) => {
+      downloadUpdate(info.cancellationToken)
+    })
+    .catch((error) => {
+      if (isNetworkError(error)) {
+        console.log('Network Error')
+      } else {
+        console.log('Unknown Error')
+        console.log(error == null ? 'unknown' : (error.stack || error).toString())
       }
     })
-  })
-
-
-  autoUpdater.on('error', (err) => {
-    logger(err)
-  })
+  // eslint-disable-next-line more/no-then
+  // autoUpdater.on('checking-for-update', () => {
+  //   console.log('checking for update')
+  // })
+  //
+  // autoUpdater.on('error', (err) => {
+  //   console.log(err)
+  // })
+  //
+  // autoUpdater.on('update-available', () => {
+  //   console.log('found new version')
+  // })
+  //
+  // autoUpdater.on('update-not-available', () => {
+  //   console.log('found no new version')
+  // })
+  //
+  // autoUpdater.on('download-progress', () => {
+  //   console.log('downloading...')
+  // })
+  //
+  // autoUpdater.on('update-downloaded', () => {
+  //   // eslint-disable-next-line more/no-then
+  //   dialog.showMessageBox({
+  //     type: 'info',
+  //     title: '应用更新',
+  //     message: '发现新版本，是否更新？',
+  //     buttons: ['是', '否'],
+  //   }).then((buttonIndex) => {
+  //     if(buttonIndex.response === 0) {
+  //       autoUpdater.quitAndInstall()
+  //       app.quit()
+  //     }
+  //   })
+  // })
 }
 
 function downloadUpdate(cancellationToken) {
@@ -462,7 +481,6 @@ async function createWindow() {
 
   // Create the browser window.
   mainWindow = new BrowserWindow(windowOptions);
-  checkUpdate()
 
   mainWindowCreated = true;
   setupSpellChecker(mainWindow, locale.messages);
@@ -1232,6 +1250,7 @@ app.on('ready', async () => {
 
   // Run window preloading in parallel with database initialization.
   await createWindow();
+  checkUpdate()
 
   try {
     await sqlInitPromise;
