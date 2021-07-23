@@ -45,44 +45,22 @@ const {
 
 function checkUpdate(){
   // eslint-disable-next-line more/no-then
-  autoUpdater.checkForUpdates().then((info) => {
-    downloadUpdate(info.cancellationToken);
-  }).catch((error) => {
+  autoUpdater.checkForUpdates()
+
+  autoUpdater.on('error', (error) => {
     if (isNetworkError(error)) {
       console.log('Network Error');
     } else {
       console.log('Unknown Error');
       console.log(error == null ? 'unknown' : (error.stack || error).toString());
     }
-  });
-
-  autoUpdater.on('error', (err) => {
-    console.log(err)
   })
 
   autoUpdater.on('update-available', () => {
     console.log('found new version')
   })
 
-  // autoUpdater.on('update-downloaded', () => {
-  //   // eslint-disable-next-line more/no-then
-  //   dialog.showMessageBox({
-  //     type: 'info',
-  //     title: '应用更新',
-  //     message: '发现新版本，是否更新？',
-  //     buttons: ['是', '否'],
-  //   }).then((buttonIndex) => {
-  //     if(buttonIndex.response === 0) {
-  //       autoUpdater.quitAndInstall()
-  //       app.quit()
-  //     }
-  //   })
-  // })
-}
-
-function downloadUpdate(cancellationToken) {
-  // eslint-disable-next-line more/no-then
-  autoUpdater.downloadUpdate(cancellationToken).then((file) => {
+  autoUpdater.on('update-downloaded', () => {
     // eslint-disable-next-line more/no-then
     dialog.showMessageBox({
       type: 'info',
@@ -95,14 +73,7 @@ function downloadUpdate(cancellationToken) {
         app.quit()
       }
     })
-  }).catch((error) => {
-    if (isNetworkError(error)) {
-      console.log('Network Error');
-    } else {
-      console.log('Unknown Error');
-      console.log(error == null ? 'unknown' : (error.stack || error).toString());
-    }
-  });
+  })
 }
 
 function isNetworkError(errorObject) {
