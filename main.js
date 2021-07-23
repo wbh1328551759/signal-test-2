@@ -48,11 +48,17 @@ function checkUpdate(){
   autoUpdater.checkForUpdates()
 
   autoUpdater.on('error', (error) => {
-    if (isNetworkError(error)) {
-      console.log('Network Error');
-    } else {
-      console.log('Unknown Error');
-      console.log(error == null ? 'unknown' : (error.stack || error).toString());
+    if (error) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: '更新失败',
+        message: '自动更新失败，请自行前往下载',
+        buttons: ['下载地址','取消'],
+      }).then((buttonIndex) => {
+        if(buttonIndex.response === 0) {
+          shell.openExternal('http://www.baidu.com');
+        }
+      })
     }
   })
 
