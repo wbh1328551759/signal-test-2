@@ -75,42 +75,8 @@ function checkUpdate() {
 
         console.log(error == null ? 'unknown' : (error.stack || error).toString())
       }
-    })
-  // eslint-disable-next-line more/no-then
-  // autoUpdater.on('checking-for-update', () => {
-  //   console.log('checking for update')
-  // })
-  //
-  // autoUpdater.on('error', (err) => {
-  //   console.log(err)
-  // })
-  //
-  // autoUpdater.on('update-available', () => {
-  //   console.log('found new version')
-  // })
-  //
-  // autoUpdater.on('update-not-available', () => {
-  //   console.log('found no new version')
-  // })
-  //
-  // autoUpdater.on('download-progress', () => {
-  //   console.log('downloading...')
-  // })
-  //
-  // autoUpdater.on('update-downloaded', () => {
-  //   // eslint-disable-next-line more/no-then
-  //   dialog.showMessageBox({
-  //     type: 'info',
-  //     title: '应用更新',
-  //     message: '发现新版本，是否更新？',
-  //     buttons: ['是', '否'],
-  //   }).then((buttonIndex) => {
-  //     if(buttonIndex.response === 0) {
-  //       autoUpdater.quitAndInstall()
-  //       app.quit()
-  //     }
-  //   })
-  // })
+    }
+
 }
 
 function downloadUpdate(cancellationToken) {
