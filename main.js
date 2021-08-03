@@ -60,7 +60,7 @@ function checkUpdate() {
       if (isNetworkError(error)) {
         if (isNetworkError(error)) {
           dialog.showMessageBox({
-            type: 'Network Error',
+            type: 'info',
             title: '自动更新失败',
             message: '自动更新失败，请自行前往官网下载最新版本',
           })
@@ -68,7 +68,7 @@ function checkUpdate() {
         console.log('Unknown Error')
           if (isNetworkError(error)) {
             dialog.showMessageBox({
-              type: 'Unknown Error',
+              type: 'info',
               title: '自动更新失败',
               message: '自动更新失败，请自行前往官网下载最新版本',
             })
@@ -100,13 +100,13 @@ function downloadUpdate(cancellationToken) {
 
       if (isNetworkError(error)) {
         dialog.showMessageBox({
-          type: 'Network Error',
+          type: 'info',
           title: '自动更新失败',
           message: '自动更新失败，请自行前往官网下载最新版本',
         })
       } else {
         dialog.showMessageBox({
-          type: 'Unknown Error',
+          type: 'info',
           title: '自动更新失败',
           message: '自动更新失败，请自行前往官网下载最新版本',
         })
