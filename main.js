@@ -64,8 +64,8 @@ function checkUpdate() {
             title: '自动更新失败',
             message: '自动更新失败，请自行前往官网下载最新版本',
           })
-      } else {
-        console.log('Unknown Error')
+        } else {
+          console.log('Unknown Error')
           if (isNetworkError(error)) {
             dialog.showMessageBox({
               type: 'info',
@@ -73,10 +73,11 @@ function checkUpdate() {
               message: '自动更新失败，请自行前往官网下载最新版本',
             })
 
-        console.log(error == null ? 'unknown' : (error.stack || error).toString())
+            console.log(error == null ? 'unknown' : (error.stack || error).toString())
+          }
+        }
       }
-    }
-
+    })
 }
 
 function downloadUpdate(cancellationToken) {
