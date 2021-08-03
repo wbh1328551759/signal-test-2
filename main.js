@@ -3,33 +3,33 @@
 
 /* eslint-disable no-console */
 
-const path = require('path');
-const url = require('url');
-const os = require('os');
-const fs = require('fs-extra');
-const crypto = require('crypto');
-const normalizePath = require('normalize-path');
-const fg = require('fast-glob');
-const PQueue = require('p-queue').default;
-const { autoUpdater } = require('electron-updater');
+const path = require('path')
+const url = require('url')
+const os = require('os')
+const fs = require('fs-extra')
+const crypto = require('crypto')
+const normalizePath = require('normalize-path')
+const fg = require('fast-glob')
+const PQueue = require('p-queue').default
+const {autoUpdater} = require('electron-updater')
 
-const _ = require('lodash');
-const pify = require('pify');
-const electron = require('electron');
+const _ = require('lodash')
+const pify = require('pify')
+const electron = require('electron')
 
-const packageJson = require('./package.json');
-const GlobalErrors = require('./app/global_errors');
-const { setup: setupSpellChecker } = require('./app/spell_check');
-const { redactAll } = require('./js/modules/privacy');
-const removeUserConfig = require('./app/user_config').remove;
+const packageJson = require('./package.json')
+const GlobalErrors = require('./app/global_errors')
+const {setup: setupSpellChecker} = require('./app/spell_check')
+const {redactAll} = require('./js/modules/privacy')
+const removeUserConfig = require('./app/user_config').remove
 
-GlobalErrors.addHandler();
+GlobalErrors.addHandler()
 
 // Set umask early on in the process lifecycle to ensure file permissions are
 // set such that only we have read access to our files
-process.umask(0o077);
+process.umask(0o077)
 
-const getRealPath = pify(fs.realpath);
+const getRealPath = pify(fs.realpath)
 const {
   app,
   BrowserWindow,
@@ -41,14 +41,14 @@ const {
   session,
   shell,
   systemPreferences,
-} = electron;
+} = electron
 
-function checkUpdate(){
+function checkUpdate() {
   console.log('checkUpdate checkUpdate checkUpdate')
   autoUpdater.setFeedURL({
-    "provider": "github",
-    "repo": "signal-test-2",
-    "owner": "wbh1328551759"
+    'provider': 'github',
+    'repo': 'signal-test-2',
+    'owner': 'wbh1328551759'
   })
 
   // eslint-disable-next-line more/no-then
@@ -58,9 +58,21 @@ function checkUpdate(){
     })
     .catch((error) => {
       if (isNetworkError(error)) {
-        console.log('Network Error')
+        if (isNetworkError(error)) {
+          dialog.showMessageBox({
+            type: 'Network Error',
+            title: '自动更新失败',
+            message: '自动更新失败，请自行前往官网下载最新版本',
+          })
       } else {
         console.log('Unknown Error')
+          if (isNetworkError(error)) {
+            dialog.showMessageBox({
+              type: 'Unknown Error',
+              title: '自动更新失败',
+              message: '自动更新失败，请自行前往官网下载最新版本',
+            })
+
         console.log(error == null ? 'unknown' : (error.stack || error).toString())
       }
     })
@@ -103,27 +115,39 @@ function checkUpdate(){
 
 function downloadUpdate(cancellationToken) {
   // eslint-disable-next-line more/no-then
-  autoUpdater.downloadUpdate(cancellationToken).then((file) => {
-    // eslint-disable-next-line more/no-then
-    dialog.showMessageBox({
-      type: 'info',
-      title: '应用更新',
-      message: '发现新版本，是否更新？',
-      buttons: ['是', '否'],
-    }).then((buttonIndex) => {
-      if(buttonIndex.response === 0) {
-        autoUpdater.quitAndInstall()
-        app.quit()
+  autoUpdater.downloadUpdate(cancellationToken)
+    .then((file) => {
+      // eslint-disable-next-line more/no-then
+      dialog.showMessageBox({
+        type: 'info',
+        title: '应用更新',
+        message: '发现新版本，是否更新？',
+        buttons: ['是', '否'],
+      }).then((buttonIndex) => {
+        if (buttonIndex.response === 0) {
+          autoUpdater.quitAndInstall()
+          app.quit()
+        }
+      })
+    })
+    .catch((error) => {
+
+      if (isNetworkError(error)) {
+        dialog.showMessageBox({
+          type: 'Network Error',
+          title: '自动更新失败',
+          message: '自动更新失败，请自行前往官网下载最新版本',
+        })
+      } else {
+        dialog.showMessageBox({
+          type: 'Unknown Error',
+          title: '自动更新失败',
+          message: '自动更新失败，请自行前往官网下载最新版本',
+        })
+        console.log('Unknown Error')
+        console.log(error == null ? 'unknown' : (error.stack || error).toString())
       }
     })
-  }).catch((error) => {
-    if (isNetworkError(error)) {
-      console.log('Network Error');
-    } else {
-      console.log('Unknown Error');
-      console.log(error == null ? 'unknown' : (error.stack || error).toString());
-    }
-  });
 }
 
 function isNetworkError(errorObject) {
@@ -132,121 +156,121 @@ function isNetworkError(errorObject) {
     errorObject.message === 'net::ERR_CONNECTION_RESET' ||
     errorObject.message === 'net::ERR_CONNECTION_CLOSE' ||
     errorObject.message === 'net::ERR_NAME_NOT_RESOLVED' ||
-    errorObject.message === 'net::ERR_CONNECTION_TIMED_OUT';
+    errorObject.message === 'net::ERR_CONNECTION_TIMED_OUT'
 }
 
-const appUserModelId = `org.whispersystems.${packageJson.name}`;
+const appUserModelId = `org.whispersystems.${packageJson.name}`
 console.log('Set Windows Application User Model ID (AUMID)', {
   appUserModelId,
-});
-app.setAppUserModelId(appUserModelId);
+})
+app.setAppUserModelId(appUserModelId)
 
 // We don't navigate, but this is the way of the future
 //   https://github.com/electron/electron/issues/18397
 // TODO: Make ringrtc-node context-aware and change this to true.
-app.allowRendererProcessReuse = false;
+app.allowRendererProcessReuse = false
 
 // Keep a global reference of the window object, if you don't, the window will
 //   be closed automatically when the JavaScript object is garbage collected.
-let mainWindow;
-let mainWindowCreated = false;
-let loadingWindow;
+let mainWindow
+let mainWindowCreated = false
+let loadingWindow
 
 function getMainWindow() {
-  return mainWindow;
+  return mainWindow
 }
 
 // Tray icon and related objects
-let tray = null;
-const startInTray = process.argv.some(arg => arg === '--start-in-tray');
+let tray = null
+const startInTray = process.argv.some(arg => arg === '--start-in-tray')
 const usingTrayIcon =
-  startInTray || process.argv.some(arg => arg === '--use-tray-icon');
+  startInTray || process.argv.some(arg => arg === '--use-tray-icon')
 
-const config = require('./app/config');
+const config = require('./app/config')
 
 // Very important to put before the single instance check, since it is based on the
 //   userData directory.
-const userConfig = require('./app/user_config');
+const userConfig = require('./app/user_config')
 
 const importMode =
-  process.argv.some(arg => arg === '--import') || config.get('import');
+  process.argv.some(arg => arg === '--import') || config.get('import')
 
 const development =
-  config.environment === 'development' || config.environment === 'staging';
+  config.environment === 'development' || config.environment === 'staging'
 
-const enableCI = Boolean(config.get('enableCI'));
+const enableCI = Boolean(config.get('enableCI'))
 
 // We generally want to pull in our own modules after this point, after the user
 //   data directory has been set.
-const attachments = require('./app/attachments');
-const attachmentChannel = require('./app/attachment_channel');
-const bounce = require('./ts/services/bounce');
-const updater = require('./ts/updater/index');
-const createTrayIcon = require('./app/tray_icon');
-const dockIcon = require('./ts/dock_icon');
-const ephemeralConfig = require('./app/ephemeral_config');
-const logging = require('./ts/logging/main_process_logging');
-const { MainSQL } = require('./ts/sql/main');
-const sqlChannels = require('./app/sql_channel');
-const windowState = require('./app/window_state');
-const { createTemplate } = require('./app/menu');
+const attachments = require('./app/attachments')
+const attachmentChannel = require('./app/attachment_channel')
+const bounce = require('./ts/services/bounce')
+const updater = require('./ts/updater/index')
+const createTrayIcon = require('./app/tray_icon')
+const dockIcon = require('./ts/dock_icon')
+const ephemeralConfig = require('./app/ephemeral_config')
+const logging = require('./ts/logging/main_process_logging')
+const {MainSQL} = require('./ts/sql/main')
+const sqlChannels = require('./app/sql_channel')
+const windowState = require('./app/window_state')
+const {createTemplate} = require('./app/menu')
 const {
   installFileHandler,
   installWebHandler,
-} = require('./app/protocol_filter');
-const { installPermissionsHandler } = require('./app/permissions');
-const OS = require('./ts/OS');
-const { isBeta } = require('./ts/util/version');
+} = require('./app/protocol_filter')
+const {installPermissionsHandler} = require('./app/permissions')
+const OS = require('./ts/OS')
+const {isBeta} = require('./ts/util/version')
 const {
   isSgnlHref,
   isSignalHttpsLink,
   parseSgnlHref,
   parseSignalHttpsLink,
-} = require('./ts/util/sgnlHref');
+} = require('./ts/util/sgnlHref')
 const {
   toggleMaximizedBrowserWindow,
-} = require('./ts/util/toggleMaximizedBrowserWindow');
+} = require('./ts/util/toggleMaximizedBrowserWindow')
 const {
   getTitleBarVisibility,
   TitleBarVisibility,
-} = require('./ts/types/Settings');
-const { Environment } = require('./ts/environment');
+} = require('./ts/types/Settings')
+const {Environment} = require('./ts/environment')
 
-const sql = new MainSQL();
+const sql = new MainSQL()
 
-let sqlInitTimeStart = 0;
-let sqlInitTimeEnd = 0;
+let sqlInitTimeStart = 0
+let sqlInitTimeEnd = 0
 
-let appStartInitialSpellcheckSetting = true;
+let appStartInitialSpellcheckSetting = true
 
 const defaultWebPrefs = {
   devTools:
     process.argv.some(arg => arg === '--enable-dev-tools') ||
     config.environment !== Environment.Production,
-};
+}
 
 async function getSpellCheckSetting() {
-  const fastValue = ephemeralConfig.get('spell-check');
+  const fastValue = ephemeralConfig.get('spell-check')
   if (fastValue !== undefined) {
-    console.log('got fast spellcheck setting', fastValue);
-    return fastValue;
+    console.log('got fast spellcheck setting', fastValue)
+    return fastValue
   }
 
-  const json = await sql.sqlCall('getItemById', ['spell-check']);
+  const json = await sql.sqlCall('getItemById', ['spell-check'])
 
   // Default to `true` if setting doesn't exist yet
-  const slowValue = json ? json.value : true;
+  const slowValue = json ? json.value : true
 
-  ephemeralConfig.set('spell-check', slowValue);
+  ephemeralConfig.set('spell-check', slowValue)
 
-  console.log('got slow spellcheck setting', slowValue);
+  console.log('got slow spellcheck setting', slowValue)
 
-  return slowValue;
+  return slowValue
 }
 
 function showWindow() {
   if (!mainWindow) {
-    return;
+    return
   }
 
   // Using focus() instead of show() seems to be important on Windows when our window
@@ -254,63 +278,63 @@ function showWindow() {
   //   the window to reposition:
   //   https://github.com/signalapp/Signal-Desktop/issues/1429
   if (mainWindow.isVisible()) {
-    mainWindow.focus();
+    mainWindow.focus()
   } else {
-    mainWindow.show();
+    mainWindow.show()
   }
 
   // toggle the visibility of the show/hide tray icon menu entries
   if (tray) {
-    tray.updateContextMenu();
+    tray.updateContextMenu()
   }
 
   // show the app on the Dock in case it was hidden before
-  dockIcon.show();
+  dockIcon.show()
 }
 
 if (!process.mas) {
-  console.log('making app single instance');
-  const gotLock = app.requestSingleInstanceLock();
+  console.log('making app single instance')
+  const gotLock = app.requestSingleInstanceLock()
   if (!gotLock) {
-    console.log('quitting; we are the second instance');
-    app.exit();
+    console.log('quitting; we are the second instance')
+    app.exit()
   } else {
     app.on('second-instance', (e, argv) => {
       // Someone tried to run a second instance, we should focus our window
       if (mainWindow) {
         if (mainWindow.isMinimized()) {
-          mainWindow.restore();
+          mainWindow.restore()
         }
 
-        showWindow();
+        showWindow()
       }
       // Are they trying to open a sgnl:// href?
-      const incomingHref = getIncomingHref(argv);
+      const incomingHref = getIncomingHref(argv)
       if (incomingHref) {
-        handleSgnlHref(incomingHref);
+        handleSgnlHref(incomingHref)
       }
       // Handled
-      return true;
-    });
+      return true
+    })
   }
 }
 
-const windowFromUserConfig = userConfig.get('window');
-const windowFromEphemeral = ephemeralConfig.get('window');
-let windowConfig = windowFromEphemeral || windowFromUserConfig;
+const windowFromUserConfig = userConfig.get('window')
+const windowFromEphemeral = ephemeralConfig.get('window')
+let windowConfig = windowFromEphemeral || windowFromUserConfig
 if (windowFromUserConfig) {
-  userConfig.set('window', null);
-  ephemeralConfig.set('window', windowConfig);
+  userConfig.set('window', null)
+  ephemeralConfig.set('window', windowConfig)
 }
 
-const loadLocale = require('./app/locale').load;
+const loadLocale = require('./app/locale').load
 
 // Both of these will be set after app fires the 'ready' event
-let logger;
-let locale;
+let logger
+let locale
 
 function prepareURL(pathSegments, moreKeys) {
-  const parsed = url.parse(path.join(...pathSegments));
+  const parsed = url.parse(path.join(...pathSegments))
 
   return url.format({
     ...parsed,
@@ -343,79 +367,79 @@ function prepareURL(pathSegments, moreKeys) {
       appStartInitialSpellcheckSetting,
       ...moreKeys,
     },
-  });
+  })
 }
 
 async function handleUrl(event, target) {
-  event.preventDefault();
-  const { protocol, hostname } = url.parse(target);
-  const isDevServer = config.enableHttp && hostname === 'localhost';
+  event.preventDefault()
+  const {protocol, hostname} = url.parse(target)
+  const isDevServer = config.enableHttp && hostname === 'localhost'
   // We only want to specially handle urls that aren't requesting the dev server
   if (isSgnlHref(target) || isSignalHttpsLink(target)) {
-    handleSgnlHref(target);
-    return;
+    handleSgnlHref(target)
+    return
   }
 
   if ((protocol === 'http:' || protocol === 'https:') && !isDevServer) {
     try {
-      await shell.openExternal(target);
+      await shell.openExternal(target)
     } catch (error) {
-      console.log(`Failed to open url: ${error.stack}`);
+      console.log(`Failed to open url: ${error.stack}`)
     }
   }
 }
 
 function handleCommonWindowEvents(window) {
-  window.webContents.on('will-navigate', handleUrl);
-  window.webContents.on('new-window', handleUrl);
+  window.webContents.on('will-navigate', handleUrl)
+  window.webContents.on('new-window', handleUrl)
   window.webContents.on('preload-error', (event, preloadPath, error) => {
-    console.error(`Preload error in ${preloadPath}: `, error.message);
-  });
+    console.error(`Preload error in ${preloadPath}: `, error.message)
+  })
 }
 
-const DEFAULT_WIDTH = 800;
-const DEFAULT_HEIGHT = 610;
-const MIN_WIDTH = 680;
-const MIN_HEIGHT = 550;
-const BOUNDS_BUFFER = 100;
+const DEFAULT_WIDTH = 800
+const DEFAULT_HEIGHT = 610
+const MIN_WIDTH = 680
+const MIN_HEIGHT = 550
+const BOUNDS_BUFFER = 100
 
 function isVisible(window, bounds) {
-  const boundsX = _.get(bounds, 'x') || 0;
-  const boundsY = _.get(bounds, 'y') || 0;
-  const boundsWidth = _.get(bounds, 'width') || DEFAULT_WIDTH;
-  const boundsHeight = _.get(bounds, 'height') || DEFAULT_HEIGHT;
+  const boundsX = _.get(bounds, 'x') || 0
+  const boundsY = _.get(bounds, 'y') || 0
+  const boundsWidth = _.get(bounds, 'width') || DEFAULT_WIDTH
+  const boundsHeight = _.get(bounds, 'height') || DEFAULT_HEIGHT
 
   // requiring BOUNDS_BUFFER pixels on the left or right side
   const rightSideClearOfLeftBound =
-    window.x + window.width >= boundsX + BOUNDS_BUFFER;
+    window.x + window.width >= boundsX + BOUNDS_BUFFER
   const leftSideClearOfRightBound =
-    window.x <= boundsX + boundsWidth - BOUNDS_BUFFER;
+    window.x <= boundsX + boundsWidth - BOUNDS_BUFFER
 
   // top can't be offscreen, and must show at least BOUNDS_BUFFER pixels at bottom
-  const topClearOfUpperBound = window.y >= boundsY;
+  const topClearOfUpperBound = window.y >= boundsY
   const topClearOfLowerBound =
-    window.y <= boundsY + boundsHeight - BOUNDS_BUFFER;
+    window.y <= boundsY + boundsHeight - BOUNDS_BUFFER
 
   return (
     rightSideClearOfLeftBound &&
     leftSideClearOfRightBound &&
     topClearOfUpperBound &&
     topClearOfLowerBound
-  );
+  )
 }
 
-let windowIcon;
+let windowIcon
 
 if (OS.isWindows()) {
-  windowIcon = path.join(__dirname, 'build', 'icons', 'win', 'icon.ico');
+  windowIcon = path.join(__dirname, 'build', 'icons', 'win', 'icon.ico')
 } else if (OS.isLinux()) {
-  windowIcon = path.join(__dirname, 'images', 'signal-logo-desktop-linux.png');
+  windowIcon = path.join(__dirname, 'images', 'signal-logo-desktop-linux.png')
 } else {
-  windowIcon = path.join(__dirname, 'build', 'icons', 'png', '512x512.png');
+  windowIcon = path.join(__dirname, 'build', 'icons', 'png', '512x512.png')
 }
 
 async function createWindow() {
-  const { screen } = electron;
+  const {screen} = electron
   const windowOptions = {
     show: false,
     width: DEFAULT_WIDTH,
@@ -449,55 +473,55 @@ async function createWindow() {
     },
     icon: windowIcon,
     ..._.pick(windowConfig, ['autoHideMenuBar', 'width', 'height', 'x', 'y']),
-  };
+  }
 
   if (!_.isNumber(windowOptions.width) || windowOptions.width < MIN_WIDTH) {
-    windowOptions.width = DEFAULT_WIDTH;
+    windowOptions.width = DEFAULT_WIDTH
   }
   if (!_.isNumber(windowOptions.height) || windowOptions.height < MIN_HEIGHT) {
-    windowOptions.height = DEFAULT_HEIGHT;
+    windowOptions.height = DEFAULT_HEIGHT
   }
   if (!_.isBoolean(windowOptions.autoHideMenuBar)) {
-    delete windowOptions.autoHideMenuBar;
+    delete windowOptions.autoHideMenuBar
   }
 
   const visibleOnAnyScreen = _.some(screen.getAllDisplays(), display => {
     if (!_.isNumber(windowOptions.x) || !_.isNumber(windowOptions.y)) {
-      return false;
+      return false
     }
 
-    return isVisible(windowOptions, _.get(display, 'bounds'));
-  });
+    return isVisible(windowOptions, _.get(display, 'bounds'))
+  })
   if (!visibleOnAnyScreen) {
-    console.log('Location reset needed');
-    delete windowOptions.x;
-    delete windowOptions.y;
+    console.log('Location reset needed')
+    delete windowOptions.x
+    delete windowOptions.y
   }
 
   logger.info(
     'Initializing BrowserWindow config: %s',
     JSON.stringify(windowOptions)
-  );
+  )
 
   // Create the browser window.
-  mainWindow = new BrowserWindow(windowOptions);
+  mainWindow = new BrowserWindow(windowOptions)
 
-  mainWindowCreated = true;
-  setupSpellChecker(mainWindow, locale.messages);
+  mainWindowCreated = true
+  setupSpellChecker(mainWindow, locale.messages)
   if (!usingTrayIcon && windowConfig && windowConfig.maximized) {
-    mainWindow.maximize();
+    mainWindow.maximize()
   }
   if (!usingTrayIcon && windowConfig && windowConfig.fullscreen) {
-    mainWindow.setFullScreen(true);
+    mainWindow.setFullScreen(true)
   }
 
   function captureAndSaveWindowStats() {
     if (!mainWindow) {
-      return;
+      return
     }
 
-    const size = mainWindow.getSize();
-    const position = mainWindow.getPosition();
+    const size = mainWindow.getSize()
+    const position = mainWindow.getPosition()
 
     // so if we need to recreate the window, we have the most recent settings
     windowConfig = {
@@ -508,54 +532,54 @@ async function createWindow() {
       height: size[1],
       x: position[0],
       y: position[1],
-    };
+    }
 
     logger.info(
       'Updating BrowserWindow config: %s',
       JSON.stringify(windowConfig)
-    );
-    ephemeralConfig.set('window', windowConfig);
+    )
+    ephemeralConfig.set('window', windowConfig)
   }
 
-  const debouncedCaptureStats = _.debounce(captureAndSaveWindowStats, 500);
-  mainWindow.on('resize', debouncedCaptureStats);
-  mainWindow.on('move', debouncedCaptureStats);
+  const debouncedCaptureStats = _.debounce(captureAndSaveWindowStats, 500)
+  mainWindow.on('resize', debouncedCaptureStats)
+  mainWindow.on('move', debouncedCaptureStats)
 
   const setWindowFocus = () => {
     if (!mainWindow) {
-      return;
+      return
     }
-    mainWindow.webContents.send('set-window-focus', mainWindow.isFocused());
-  };
-  mainWindow.on('focus', setWindowFocus);
-  mainWindow.on('blur', setWindowFocus);
-  mainWindow.once('ready-to-show', setWindowFocus);
+    mainWindow.webContents.send('set-window-focus', mainWindow.isFocused())
+  }
+  mainWindow.on('focus', setWindowFocus)
+  mainWindow.on('blur', setWindowFocus)
+  mainWindow.once('ready-to-show', setWindowFocus)
   // This is a fallback in case we drop an event for some reason.
-  setInterval(setWindowFocus, 10000);
+  setInterval(setWindowFocus, 10000)
 
   const moreKeys = {
     isFullScreen: String(Boolean(mainWindow.isFullScreen())),
-  };
+  }
 
   if (config.environment === 'test') {
-    mainWindow.loadURL(prepareURL([__dirname, 'test', 'index.html'], moreKeys));
+    mainWindow.loadURL(prepareURL([__dirname, 'test', 'index.html'], moreKeys))
   } else if (config.environment === 'test-lib') {
     mainWindow.loadURL(
       prepareURL([__dirname, 'libtextsecure', 'test', 'index.html'], moreKeys)
-    );
+    )
   } else {
-    mainWindow.loadURL(prepareURL([__dirname, 'background.html'], moreKeys));
+    mainWindow.loadURL(prepareURL([__dirname, 'background.html'], moreKeys))
   }
 
   if (!enableCI && config.get('openDevTools')) {
     // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools()
   }
 
-  handleCommonWindowEvents(mainWindow);
+  handleCommonWindowEvents(mainWindow)
 
   // App dock icon bounce
-  bounce.init(mainWindow);
+  bounce.init(mainWindow)
 
   // Emitted when the window is about to be closed.
   // Note: We do most of our shutdown logic here because all windows are closed by
@@ -564,18 +588,18 @@ async function createWindow() {
     console.log('close event', {
       readyForShutdown: mainWindow ? mainWindow.readyForShutdown : null,
       shouldQuit: windowState.shouldQuit(),
-    });
+    })
     // If the application is terminating, just do the default
     if (
       config.environment === 'test' ||
       config.environment === 'test-lib' ||
       (mainWindow.readyForShutdown && windowState.shouldQuit())
     ) {
-      return;
+      return
     }
 
     // Prevent the shutdown
-    e.preventDefault();
+    e.preventDefault()
 
     /**
      * if the user is in fullscreen mode and closes the window, not the
@@ -586,10 +610,10 @@ async function createWindow() {
      */
 
     if (mainWindow.isFullScreen()) {
-      mainWindow.once('leave-full-screen', () => mainWindow.hide());
-      mainWindow.setFullScreen(false);
+      mainWindow.once('leave-full-screen', () => mainWindow.hide())
+      mainWindow.setFullScreen(false)
     } else {
-      mainWindow.hide();
+      mainWindow.hide()
     }
 
     // On Mac, or on other platforms when the tray icon is in use, the window
@@ -597,137 +621,138 @@ async function createWindow() {
     if (!windowState.shouldQuit() && (usingTrayIcon || OS.isMacOS())) {
       // toggle the visibility of the show/hide tray icon menu entries
       if (tray) {
-        tray.updateContextMenu();
+        tray.updateContextMenu()
       }
 
       // hide the app from the Dock on macOS if the tray icon is enabled
       if (usingTrayIcon) {
-        dockIcon.hide();
+        dockIcon.hide()
       }
 
-      return;
+      return
     }
 
-    await requestShutdown();
+    await requestShutdown()
     if (mainWindow) {
-      mainWindow.readyForShutdown = true;
+      mainWindow.readyForShutdown = true
     }
-    await sql.close();
-    app.quit();
-  });
+    await sql.close()
+    app.quit()
+  })
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
-    mainWindow = null;
-  });
+    mainWindow = null
+  })
 
   mainWindow.on('enter-full-screen', () => {
-    mainWindow.webContents.send('full-screen-change', true);
-  });
+    mainWindow.webContents.send('full-screen-change', true)
+  })
   mainWindow.on('leave-full-screen', () => {
-    mainWindow.webContents.send('full-screen-change', false);
-  });
+    mainWindow.webContents.send('full-screen-change', false)
+  })
 
   mainWindow.once('ready-to-show', async () => {
-    console.log('main window is ready-to-show');
+    console.log('main window is ready-to-show')
 
     try {
-      await sqlInitPromise;
+      await sqlInitPromise
     } catch (error) {
       console.log(
         'main window is ready, but sql has errored',
         error && error.stack
-      );
-      return;
+      )
+      return
     }
 
     if (!mainWindow) {
-      return;
+      return
     }
 
     // allow to start minimised in tray
     if (!startInTray) {
-      console.log('showing main window');
-      mainWindow.show();
+      console.log('showing main window')
+      mainWindow.show()
     }
-  });
+  })
 }
 
 // Renderer asks if we are done with the database
 ipc.on('database-ready', async event => {
   try {
-    await sqlInitPromise;
+    await sqlInitPromise
   } catch (error) {
-    return;
+    return
   }
 
-  console.log('sending `database-ready`');
-  event.sender.send('database-ready');
-});
+  console.log('sending `database-ready`')
+  event.sender.send('database-ready')
+})
 
 ipc.on('show-window', () => {
-  showWindow();
-});
+  showWindow()
+})
 
 ipc.on('title-bar-double-click', () => {
   if (!mainWindow) {
-    return;
+    return
   }
 
   if (OS.isMacOS()) {
     switch (
       systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string')
-    ) {
+      ) {
       case 'Minimize':
-        mainWindow.minimize();
-        break;
+        mainWindow.minimize()
+        break
       case 'Maximize':
-        toggleMaximizedBrowserWindow(mainWindow);
-        break;
+        toggleMaximizedBrowserWindow(mainWindow)
+        break
       default:
         // If this is disabled, it'll be 'None'. If it's anything else, that's unexpected,
         //   but we'll just no-op.
-        break;
+        break
     }
   } else {
     // This is currently only supported on macOS. This `else` branch is just here when/if
     //   we add support for other operating systems.
-    toggleMaximizedBrowserWindow(mainWindow);
+    toggleMaximizedBrowserWindow(mainWindow)
   }
-});
+})
 
-let isReadyForUpdates = false;
+let isReadyForUpdates = false
+
 async function readyForUpdates() {
   if (isReadyForUpdates) {
-    return;
+    return
   }
 
-  isReadyForUpdates = true;
+  isReadyForUpdates = true
 
   // First, install requested sticker pack
-  const incomingHref = getIncomingHref(process.argv);
+  const incomingHref = getIncomingHref(process.argv)
   if (incomingHref) {
-    handleSgnlHref(incomingHref);
+    handleSgnlHref(incomingHref)
   }
 
   // Second, start checking for app updates
   try {
-    await updater.start(getMainWindow, locale, logger);
+    await updater.start(getMainWindow, locale, logger)
   } catch (error) {
     logger.error(
       'Error starting update checks:',
       error && error.stack ? error.stack : error
-    );
+    )
   }
 }
 
-ipc.once('ready-for-updates', readyForUpdates);
+ipc.once('ready-for-updates', readyForUpdates)
 
-const TEN_MINUTES = 10 * 60 * 1000;
-setTimeout(readyForUpdates, TEN_MINUTES);
+const TEN_MINUTES = 10 * 60 * 1000
+setTimeout(readyForUpdates, TEN_MINUTES)
 
 // the support only provides a subset of languages available within the app
 // so we have to list them out here and fallback to english if not included
@@ -761,64 +786,65 @@ const SUPPORT_LANGUAGES = [
   'vi',
   'zh-cn',
   'zh-tw',
-];
+]
 
 function openContactUs() {
-  const userLanguage = app.getLocale();
+  const userLanguage = app.getLocale()
   const language = SUPPORT_LANGUAGES.includes(userLanguage)
     ? userLanguage
-    : 'en-us';
+    : 'en-us'
 
   // This URL needs a hardcoded language because the '?desktop' is dropped if the page
   //   auto-redirects to the proper URL
   shell.openExternal(
     `https://support.signal.org/hc/${language}/requests/new?desktop`
-  );
+  )
 }
 
 function openJoinTheBeta() {
   // If we omit the language, the site will detect the language and redirect
-  shell.openExternal('https://support.signal.org/hc/articles/360007318471');
+  shell.openExternal('https://support.signal.org/hc/articles/360007318471')
 }
 
 function openReleaseNotes() {
   shell.openExternal(
     `https://github.com/signalapp/Signal-Desktop/releases/tag/v${app.getVersion()}`
-  );
+  )
 }
 
 function openSupportPage() {
   // If we omit the language, the site will detect the language and redirect
-  shell.openExternal('https://support.signal.org/hc/sections/360001602812');
+  shell.openExternal('https://support.signal.org/hc/sections/360001602812')
 }
 
 function openForums() {
-  shell.openExternal('https://community.signalusers.org/');
+  shell.openExternal('https://community.signalusers.org/')
 }
 
 function showKeyboardShortcuts() {
   if (mainWindow) {
-    mainWindow.webContents.send('show-keyboard-shortcuts');
+    mainWindow.webContents.send('show-keyboard-shortcuts')
   }
 }
 
 function setupAsNewDevice() {
   if (mainWindow) {
-    mainWindow.webContents.send('set-up-as-new-device');
+    mainWindow.webContents.send('set-up-as-new-device')
   }
 }
 
 function setupAsStandalone() {
   if (mainWindow) {
-    mainWindow.webContents.send('set-up-as-standalone');
+    mainWindow.webContents.send('set-up-as-standalone')
   }
 }
 
-let aboutWindow;
+let aboutWindow
+
 function showAbout() {
   if (aboutWindow) {
-    aboutWindow.show();
-    return;
+    aboutWindow.show()
+    return
   }
 
   const options = {
@@ -837,41 +863,42 @@ function showAbout() {
       preload: path.join(__dirname, 'about_preload.js'),
       nativeWindowOpen: true,
     },
-  };
+  }
 
-  aboutWindow = new BrowserWindow(options);
+  aboutWindow = new BrowserWindow(options)
 
-  handleCommonWindowEvents(aboutWindow);
+  handleCommonWindowEvents(aboutWindow)
 
-  aboutWindow.loadURL(prepareURL([__dirname, 'about.html']));
+  aboutWindow.loadURL(prepareURL([__dirname, 'about.html']))
 
   aboutWindow.on('closed', () => {
-    aboutWindow = null;
-  });
+    aboutWindow = null
+  })
 
   aboutWindow.once('ready-to-show', () => {
-    aboutWindow.show();
-  });
+    aboutWindow.show()
+  })
 }
 
-let settingsWindow;
+let settingsWindow
+
 function showSettingsWindow() {
   if (settingsWindow) {
-    settingsWindow.show();
-    return;
+    settingsWindow.show()
+    return
   }
   if (!mainWindow) {
-    return;
+    return
   }
 
-  addDarkOverlay();
+  addDarkOverlay()
 
-  const size = mainWindow.getSize();
+  const size = mainWindow.getSize()
   // center settings window over main window
-  const settingwidth = Math.min(500, size[0]);
-  const settingheight = Math.max(size[1] - 100, MIN_HEIGHT);
-  const mainPos = mainWindow.getPosition();
-  const mainSize = mainWindow.getSize();
+  const settingwidth = Math.min(500, size[0])
+  const settingheight = Math.max(size[1] - 100, MIN_HEIGHT)
+  const mainPos = mainWindow.getPosition()
+  const mainSize = mainWindow.getSize()
   const options = {
     x: Math.round(mainPos[0] + mainSize[0] / 2 - settingwidth / 2),
     y: Math.round(mainPos[1] + mainSize[1] / 2 - settingheight / 2),
@@ -894,55 +921,56 @@ function showSettingsWindow() {
       nativeWindowOpen: true,
     },
     parent: mainWindow,
-  };
+  }
 
-  settingsWindow = new BrowserWindow(options);
+  settingsWindow = new BrowserWindow(options)
 
-  handleCommonWindowEvents(settingsWindow);
+  handleCommonWindowEvents(settingsWindow)
 
-  settingsWindow.loadURL(prepareURL([__dirname, 'settings.html']));
+  settingsWindow.loadURL(prepareURL([__dirname, 'settings.html']))
 
   settingsWindow.on('closed', () => {
-    removeDarkOverlay();
-    settingsWindow = null;
-  });
+    removeDarkOverlay()
+    settingsWindow = null
+  })
 
   settingsWindow.once('ready-to-show', () => {
-    settingsWindow.show();
-  });
+    settingsWindow.show()
+  })
 }
 
 async function getIsLinked() {
   try {
-    const number = await sql.sqlCall('getItemById', ['number_id']);
-    const password = await sql.sqlCall('getItemById', ['password']);
-    return Boolean(number && password);
+    const number = await sql.sqlCall('getItemById', ['number_id'])
+    const password = await sql.sqlCall('getItemById', ['password'])
+    return Boolean(number && password)
   } catch (e) {
-    return false;
+    return false
   }
 }
 
-let stickerCreatorWindow;
+let stickerCreatorWindow
+
 async function showStickerCreator() {
   if (!(await getIsLinked())) {
-    const { message } = locale.messages[
+    const {message} = locale.messages[
       'StickerCreator--Authentication--error'
-    ];
+      ]
 
     dialog.showMessageBox({
       type: 'warning',
       message,
-    });
+    })
 
-    return;
+    return
   }
 
   if (stickerCreatorWindow) {
-    stickerCreatorWindow.show();
-    return;
+    stickerCreatorWindow.show()
+    return
   }
 
-  const { x = 0, y = 0 } = windowConfig || {};
+  const {x = 0, y = 0} = windowConfig || {}
 
   const options = {
     x: x + 100,
@@ -964,42 +992,43 @@ async function showStickerCreator() {
       nativeWindowOpen: true,
       spellcheck: await getSpellCheckSetting(),
     },
-  };
+  }
 
-  stickerCreatorWindow = new BrowserWindow(options);
-  setupSpellChecker(stickerCreatorWindow, locale.messages);
+  stickerCreatorWindow = new BrowserWindow(options)
+  setupSpellChecker(stickerCreatorWindow, locale.messages)
 
-  handleCommonWindowEvents(stickerCreatorWindow);
+  handleCommonWindowEvents(stickerCreatorWindow)
 
   const appUrl = config.enableHttp
     ? prepareURL(['http://localhost:6380/sticker-creator/dist/index.html'])
-    : prepareURL([__dirname, 'sticker-creator/dist/index.html']);
+    : prepareURL([__dirname, 'sticker-creator/dist/index.html'])
 
-  stickerCreatorWindow.loadURL(appUrl);
+  stickerCreatorWindow.loadURL(appUrl)
 
   stickerCreatorWindow.on('closed', () => {
-    stickerCreatorWindow = null;
-  });
+    stickerCreatorWindow = null
+  })
 
   stickerCreatorWindow.once('ready-to-show', () => {
-    stickerCreatorWindow.show();
+    stickerCreatorWindow.show()
 
     if (config.get('openDevTools')) {
       // Open the DevTools.
-      stickerCreatorWindow.webContents.openDevTools();
+      stickerCreatorWindow.webContents.openDevTools()
     }
-  });
+  })
 }
 
-let debugLogWindow;
+let debugLogWindow
+
 async function showDebugLogWindow() {
   if (debugLogWindow) {
-    debugLogWindow.show();
-    return;
+    debugLogWindow.show()
+    return
   }
 
-  const theme = await pify(getDataFromMainWindow)('theme-setting');
-  const size = mainWindow.getSize();
+  const theme = await pify(getDataFromMainWindow)('theme-setting')
+  const size = mainWindow.getSize()
   const options = {
     width: Math.max(size[0] - 100, MIN_WIDTH),
     height: Math.max(size[1] - 100, MIN_HEIGHT),
@@ -1018,39 +1047,40 @@ async function showDebugLogWindow() {
       nativeWindowOpen: true,
     },
     parent: mainWindow,
-  };
+  }
 
-  debugLogWindow = new BrowserWindow(options);
+  debugLogWindow = new BrowserWindow(options)
 
-  handleCommonWindowEvents(debugLogWindow);
+  handleCommonWindowEvents(debugLogWindow)
 
-  debugLogWindow.loadURL(prepareURL([__dirname, 'debug_log.html'], { theme }));
+  debugLogWindow.loadURL(prepareURL([__dirname, 'debug_log.html'], {theme}))
 
   debugLogWindow.on('closed', () => {
-    removeDarkOverlay();
-    debugLogWindow = null;
-  });
+    removeDarkOverlay()
+    debugLogWindow = null
+  })
 
   debugLogWindow.once('ready-to-show', () => {
-    addDarkOverlay();
-    debugLogWindow.show();
-  });
+    addDarkOverlay()
+    debugLogWindow.show()
+  })
 }
 
-let permissionsPopupWindow;
+let permissionsPopupWindow
+
 function showPermissionsPopupWindow(forCalling, forCamera) {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     if (permissionsPopupWindow) {
-      permissionsPopupWindow.show();
-      reject(new Error('Permission window already showing'));
+      permissionsPopupWindow.show()
+      reject(new Error('Permission window already showing'))
     }
     if (!mainWindow) {
-      reject(new Error('No main window'));
+      reject(new Error('No main window'))
     }
 
-    const theme = await pify(getDataFromMainWindow)('theme-setting');
-    const size = mainWindow.getSize();
+    const theme = await pify(getDataFromMainWindow)('theme-setting')
+    const size = mainWindow.getSize()
     const options = {
       width: Math.min(400, size[0]),
       height: Math.min(150, size[1]),
@@ -1070,11 +1100,11 @@ function showPermissionsPopupWindow(forCalling, forCamera) {
         nativeWindowOpen: true,
       },
       parent: mainWindow,
-    };
+    }
 
-    permissionsPopupWindow = new BrowserWindow(options);
+    permissionsPopupWindow = new BrowserWindow(options)
 
-    handleCommonWindowEvents(permissionsPopupWindow);
+    handleCommonWindowEvents(permissionsPopupWindow)
 
     permissionsPopupWindow.loadURL(
       prepareURL([__dirname, 'permissions_popup.html'], {
@@ -1082,69 +1112,69 @@ function showPermissionsPopupWindow(forCalling, forCamera) {
         forCalling,
         forCamera,
       })
-    );
+    )
 
     permissionsPopupWindow.on('closed', () => {
-      removeDarkOverlay();
-      permissionsPopupWindow = null;
+      removeDarkOverlay()
+      permissionsPopupWindow = null
 
-      resolve();
-    });
+      resolve()
+    })
 
     permissionsPopupWindow.once('ready-to-show', () => {
-      addDarkOverlay();
-      permissionsPopupWindow.show();
-    });
-  });
+      addDarkOverlay()
+      permissionsPopupWindow.show()
+    })
+  })
 }
 
 async function initializeSQL() {
-  const userDataPath = await getRealPath(app.getPath('userData'));
+  const userDataPath = await getRealPath(app.getPath('userData'))
 
-  let key = userConfig.get('key');
+  let key = userConfig.get('key')
   if (!key) {
     console.log(
       'key/initialize: Generating new encryption key, since we did not find it on disk'
-    );
+    )
     // https://www.zetetic.net/sqlcipher/sqlcipher-api/#key
-    key = crypto.randomBytes(32).toString('hex');
-    userConfig.set('key', key);
+    key = crypto.randomBytes(32).toString('hex')
+    userConfig.set('key', key)
   }
 
-  sqlInitTimeStart = Date.now();
+  sqlInitTimeStart = Date.now()
   await sql.initialize({
     configDir: userDataPath,
     key,
-  });
-  sqlInitTimeEnd = Date.now();
+  })
+  sqlInitTimeEnd = Date.now()
 }
 
-const sqlInitPromise = initializeSQL();
+const sqlInitPromise = initializeSQL()
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-let ready = false;
+let ready = false
 app.on('ready', async () => {
-  const startTime = Date.now();
+  const startTime = Date.now()
 
   // We use this event only a single time to log the startup time of the app
   // from when it's first ready until the loading screen disappears.
   ipc.once('signal-app-loaded', (event, info) => {
-    const { preloadTime, connectTime, processedCount } = info;
+    const {preloadTime, connectTime, processedCount} = info
 
-    const loadTime = Date.now() - startTime;
-    const sqlInitTime = sqlInitTimeEnd - sqlInitTimeStart;
+    const loadTime = Date.now() - startTime
+    const sqlInitTime = sqlInitTimeEnd - sqlInitTimeStart
 
-    const messageTime = loadTime - preloadTime - connectTime;
-    const messagesPerSec = (processedCount * 1000) / messageTime;
+    const messageTime = loadTime - preloadTime - connectTime
+    const messagesPerSec = (processedCount * 1000) / messageTime
 
-    console.log('App loaded - time:', loadTime);
-    console.log('SQL init - time:', sqlInitTime);
-    console.log('Preload - time:', preloadTime);
-    console.log('WebSocket connect - time:', connectTime);
-    console.log('Processed count:', processedCount);
-    console.log('Messages per second:', messagesPerSec);
+    console.log('App loaded - time:', loadTime)
+    console.log('SQL init - time:', sqlInitTime)
+    console.log('Preload - time:', preloadTime)
+    console.log('WebSocket connect - time:', connectTime)
+    console.log('Processed count:', processedCount)
+    console.log('Messages per second:', messagesPerSec)
 
     if (enableCI) {
       console._log(
@@ -1157,12 +1187,12 @@ app.on('ready', async () => {
           processedCount,
           messagesPerSec,
         })
-      );
+      )
     }
-  });
+  })
 
-  const userDataPath = await getRealPath(app.getPath('userData'));
-  const installPath = await getRealPath(app.getAppPath());
+  const userDataPath = await getRealPath(app.getPath('userData'))
+  const installPath = await getRealPath(app.getAppPath())
 
   if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'test-lib') {
     installFileHandler({
@@ -1170,57 +1200,57 @@ app.on('ready', async () => {
       userDataPath,
       installPath,
       isWindows: OS.isWindows(),
-    });
+    })
   }
 
   installWebHandler({
     enableHttp: config.enableHttp,
     protocol: electronProtocol,
-  });
+  })
 
-  installPermissionsHandler({ session, userConfig });
+  installPermissionsHandler({session, userConfig})
 
-  logger = await logging.initialize();
-  logger.info('app ready');
-  logger.info(`starting version ${packageJson.version}`);
+  logger = await logging.initialize()
+  logger.info('app ready')
+  logger.info(`starting version ${packageJson.version}`)
 
   // This logging helps us debug user reports about broken devices.
   {
-    let getMediaAccessStatus;
+    let getMediaAccessStatus
     // This function is not supported on Linux, so we have a fallback.
     if (systemPreferences.getMediaAccessStatus) {
       getMediaAccessStatus = systemPreferences.getMediaAccessStatus.bind(
         systemPreferences
-      );
+      )
     } else {
-      getMediaAccessStatus = _.noop;
+      getMediaAccessStatus = _.noop
     }
     logger.info(
       'media access status',
       getMediaAccessStatus('microphone'),
       getMediaAccessStatus('camera')
-    );
+    )
   }
 
   if (!locale) {
-    const appLocale = process.env.NODE_ENV === 'test' ? 'en' : app.getLocale();
-    locale = loadLocale({ appLocale, logger });
+    const appLocale = process.env.NODE_ENV === 'test' ? 'en' : app.getLocale()
+    locale = loadLocale({appLocale, logger})
   }
 
-  GlobalErrors.updateLocale(locale.messages);
+  GlobalErrors.updateLocale(locale.messages)
 
   // If the sql initialization takes more than three seconds to complete, we
   // want to notify the user that things are happening
-  const timeout = new Promise(resolve => setTimeout(resolve, 3000, 'timeout'));
+  const timeout = new Promise(resolve => setTimeout(resolve, 3000, 'timeout'))
   // eslint-disable-next-line more/no-then
   Promise.race([sqlInitPromise, timeout]).then(maybeTimeout => {
     if (maybeTimeout !== 'timeout') {
-      return;
+      return
     }
 
     console.log(
       'sql.initialize is taking more than three seconds; showing loading dialog'
-    );
+    )
 
     loadingWindow = new BrowserWindow({
       show: false,
@@ -1235,27 +1265,27 @@ app.on('ready', async () => {
         preload: path.join(__dirname, 'loading_preload.js'),
       },
       icon: windowIcon,
-    });
+    })
 
     loadingWindow.once('ready-to-show', async () => {
-      loadingWindow.show();
+      loadingWindow.show()
       // Wait for sql initialization to complete
-      await sqlInitPromise;
-      loadingWindow.destroy();
-      loadingWindow = null;
-    });
+      await sqlInitPromise
+      loadingWindow.destroy()
+      loadingWindow = null
+    })
 
-    loadingWindow.loadURL(prepareURL([__dirname, 'loading.html']));
-  });
+    loadingWindow.loadURL(prepareURL([__dirname, 'loading.html']))
+  })
 
   // Run window preloading in parallel with database initialization.
-  await createWindow();
+  await createWindow()
   checkUpdate()
 
   try {
-    await sqlInitPromise;
+    await sqlInitPromise
   } catch (error) {
-    console.log('sql.initialize was unsuccessful; returning early');
+    console.log('sql.initialize was unsuccessful; returning early')
     const buttonIndex = dialog.showMessageBoxSync({
       buttons: [
         locale.messages.copyErrorAndQuit.message,
@@ -1266,104 +1296,104 @@ app.on('ready', async () => {
       message: locale.messages.databaseError.message,
       noLink: true,
       type: 'error',
-    });
+    })
 
     if (buttonIndex === 0) {
       clipboard.writeText(
         `Database startup error:\n\n${redactAll(error.stack)}`
-      );
+      )
     } else {
-      await sql.sqlCall('removeDB', []);
-      removeUserConfig();
-      app.relaunch();
+      await sql.sqlCall('removeDB', [])
+      removeUserConfig()
+      app.relaunch()
     }
 
-    app.exit(1);
+    app.exit(1)
 
-    return;
+    return
   }
 
   // eslint-disable-next-line more/no-then
-  appStartInitialSpellcheckSetting = await getSpellCheckSetting();
-  await sqlChannels.initialize(sql);
+  appStartInitialSpellcheckSetting = await getSpellCheckSetting()
+  await sqlChannels.initialize(sql)
 
   try {
-    const IDB_KEY = 'indexeddb-delete-needed';
-    const item = await sql.sqlCall('getItemById', [IDB_KEY]);
+    const IDB_KEY = 'indexeddb-delete-needed'
+    const item = await sql.sqlCall('getItemById', [IDB_KEY])
     if (item && item.value) {
-      await sql.sqlCall('removeIndexedDBFiles', []);
-      await sql.sqlCall('removeItemById', [IDB_KEY]);
+      await sql.sqlCall('removeIndexedDBFiles', [])
+      await sql.sqlCall('removeItemById', [IDB_KEY])
     }
   } catch (err) {
     console.log(
       '(ready event handler) error deleting IndexedDB:',
       err && err.stack ? err.stack : err
-    );
+    )
   }
 
   async function cleanupOrphanedAttachments() {
-    const allAttachments = await attachments.getAllAttachments(userDataPath);
+    const allAttachments = await attachments.getAllAttachments(userDataPath)
     const orphanedAttachments = await sql.sqlCall('removeKnownAttachments', [
       allAttachments,
-    ]);
+    ])
     await attachments.deleteAll({
       userDataPath,
       attachments: orphanedAttachments,
-    });
+    })
 
-    const allStickers = await attachments.getAllStickers(userDataPath);
+    const allStickers = await attachments.getAllStickers(userDataPath)
     const orphanedStickers = await sql.sqlCall('removeKnownStickers', [
       allStickers,
-    ]);
+    ])
     await attachments.deleteAllStickers({
       userDataPath,
       stickers: orphanedStickers,
-    });
+    })
 
     const allDraftAttachments = await attachments.getAllDraftAttachments(
       userDataPath
-    );
+    )
     const orphanedDraftAttachments = await sql.sqlCall(
       'removeKnownDraftAttachments',
       [allDraftAttachments]
-    );
+    )
     await attachments.deleteAllDraftAttachments({
       userDataPath,
       stickers: orphanedDraftAttachments,
-    });
+    })
   }
 
   try {
-    await attachments.clearTempPath(userDataPath);
+    await attachments.clearTempPath(userDataPath)
   } catch (err) {
     logger.error(
       'main/ready: Error deleting temp dir:',
       err && err.stack ? err.stack : err
-    );
+    )
   }
   await attachmentChannel.initialize({
     configDir: userDataPath,
     cleanupOrphanedAttachments,
-  });
+  })
 
-  ready = true;
+  ready = true
 
   if (usingTrayIcon) {
-    tray = createTrayIcon(getMainWindow, locale.messages);
+    tray = createTrayIcon(getMainWindow, locale.messages)
   }
 
-  setupMenu();
+  setupMenu()
 
   ensureFilePermissions([
     'config.json',
     'sql/db.sqlite',
     'sql/db.sqlite-wal',
     'sql/db.sqlite-shm',
-  ]);
-});
+  ])
+})
 
 function setupMenu(options) {
-  const { platform } = process;
+  const {platform} = process
   const menuOptions = {
     ...options,
     development,
@@ -1383,29 +1413,29 @@ function setupMenu(options) {
     platform,
     setupAsNewDevice,
     setupAsStandalone,
-  };
-  const template = createTemplate(menuOptions, locale.messages);
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+  }
+  const template = createTemplate(menuOptions, locale.messages)
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
 }
 
 async function requestShutdown() {
   if (!mainWindow || !mainWindow.webContents) {
-    return;
+    return
   }
 
-  console.log('requestShutdown: Requesting close of mainWindow...');
+  console.log('requestShutdown: Requesting close of mainWindow...')
   const request = new Promise((resolve, reject) => {
     ipc.once('now-ready-for-shutdown', (_event, error) => {
-      console.log('requestShutdown: Response received');
+      console.log('requestShutdown: Response received')
 
       if (error) {
-        return reject(error);
+        return reject(error)
       }
 
-      return resolve();
-    });
-    mainWindow.webContents.send('get-ready-for-shutdown');
+      return resolve()
+    })
+    mainWindow.webContents.send('get-ready-for-shutdown')
 
     // We'll wait two minutes, then force the app to go down. This can happen if someone
     //   exits the app before we've set everything up in preload() (so the browser isn't
@@ -1414,18 +1444,18 @@ async function requestShutdown() {
     setTimeout(() => {
       console.log(
         'requestShutdown: Response never received; forcing shutdown.'
-      );
-      resolve();
-    }, 2 * 60 * 1000);
-  });
+      )
+      resolve()
+    }, 2 * 60 * 1000)
+  })
 
   try {
-    await request;
+    await request
   } catch (error) {
     console.log(
       'requestShutdown error:',
       error && error.stack ? error.stack : error
-    );
+    )
   }
 }
 
@@ -1433,199 +1463,200 @@ app.on('before-quit', () => {
   console.log('before-quit event', {
     readyForShutdown: mainWindow ? mainWindow.readyForShutdown : null,
     shouldQuit: windowState.shouldQuit(),
-  });
+  })
 
-  windowState.markShouldQuit();
-});
+  windowState.markShouldQuit()
+})
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  console.log('main process handling window-all-closed');
+  console.log('main process handling window-all-closed')
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   const shouldAutoClose =
     !OS.isMacOS() ||
     config.environment === 'test' ||
-    config.environment === 'test-lib';
+    config.environment === 'test-lib'
 
   // Only automatically quit if the main window has been created
   // This is necessary because `window-all-closed` can be triggered by the
   // "optimizing application" window closing
   if (shouldAutoClose && mainWindowCreated) {
-    app.quit();
+    app.quit()
   }
-});
+})
 
 app.on('activate', () => {
   if (!ready) {
-    return;
+    return
   }
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (mainWindow) {
-    mainWindow.show();
+    mainWindow.show()
   } else {
-    createWindow();
+    createWindow()
   }
-});
+})
 
 // Defense in depth. We never intend to open webviews or windows. Prevent it completely.
 app.on('web-contents-created', (createEvent, contents) => {
   contents.on('will-attach-webview', attachEvent => {
-    attachEvent.preventDefault();
-  });
+    attachEvent.preventDefault()
+  })
   contents.on('new-window', newEvent => {
-    newEvent.preventDefault();
-  });
-});
+    newEvent.preventDefault()
+  })
+})
 
-app.setAsDefaultProtocolClient('sgnl');
+app.setAsDefaultProtocolClient('sgnl')
 app.on('will-finish-launching', () => {
   // open-url must be set from within will-finish-launching for macOS
   // https://stackoverflow.com/a/43949291
   app.on('open-url', (event, incomingHref) => {
-    event.preventDefault();
-    handleSgnlHref(incomingHref);
-  });
-});
+    event.preventDefault()
+    handleSgnlHref(incomingHref)
+  })
+})
 
 if (enableCI) {
   ipc.on('set-provisioning-url', (event, provisioningURL) => {
-    console._log('ci: provisioning_url=%j', provisioningURL);
-  });
+    console._log('ci: provisioning_url=%j', provisioningURL)
+  })
 }
 
 ipc.on('set-badge-count', (event, count) => {
-  app.badgeCount = count;
-});
+  app.badgeCount = count
+})
 
 ipc.on('remove-setup-menu-items', () => {
-  setupMenu();
-});
+  setupMenu()
+})
 
 ipc.on('add-setup-menu-items', () => {
   setupMenu({
     includeSetup: true,
-  });
-});
+  })
+})
 
 ipc.on('draw-attention', () => {
   if (!mainWindow) {
-    return;
+    return
   }
 
   if (OS.isWindows() || OS.isLinux()) {
-    mainWindow.flashFrame(true);
+    mainWindow.flashFrame(true)
   }
-});
+})
 
 ipc.on('restart', () => {
-  app.relaunch();
-  app.quit();
-});
+  app.relaunch()
+  app.quit()
+})
 ipc.on('shutdown', () => {
-  app.quit();
-});
+  app.quit()
+})
 
 ipc.on('set-auto-hide-menu-bar', (event, autoHide) => {
   if (mainWindow) {
-    mainWindow.autoHideMenuBar = autoHide;
+    mainWindow.autoHideMenuBar = autoHide
   }
-});
+})
 
 ipc.on('set-menu-bar-visibility', (event, visibility) => {
   if (mainWindow) {
-    mainWindow.setMenuBarVisibility(visibility);
+    mainWindow.setMenuBarVisibility(visibility)
   }
-});
+})
 
 ipc.on('close-about', () => {
   if (aboutWindow) {
-    aboutWindow.close();
+    aboutWindow.close()
   }
-});
+})
 
 ipc.on('update-tray-icon', (event, unreadCount) => {
   if (tray) {
-    tray.updateIcon(unreadCount);
+    tray.updateIcon(unreadCount)
   }
-});
+})
 
 // Debug Log-related IPC calls
 
-ipc.on('show-debug-log', showDebugLogWindow);
+ipc.on('show-debug-log', showDebugLogWindow)
 ipc.on('close-debug-log', () => {
   if (debugLogWindow) {
-    debugLogWindow.close();
+    debugLogWindow.close()
   }
-});
+})
 
 // Permissions Popup-related IPC calls
 
 ipc.on('show-permissions-popup', () => {
-  showPermissionsPopupWindow(false, false);
-});
+  showPermissionsPopupWindow(false, false)
+})
 ipc.handle('show-calling-permissions-popup', async (event, forCamera) => {
   try {
-    await showPermissionsPopupWindow(true, forCamera);
+    await showPermissionsPopupWindow(true, forCamera)
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
-});
+})
 ipc.on('close-permissions-popup', () => {
   if (permissionsPopupWindow) {
-    permissionsPopupWindow.close();
+    permissionsPopupWindow.close()
   }
-});
+})
 
 // Settings-related IPC calls
 
 function addDarkOverlay() {
   if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send('add-dark-overlay');
+    mainWindow.webContents.send('add-dark-overlay')
   }
 }
+
 function removeDarkOverlay() {
   if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send('remove-dark-overlay');
+    mainWindow.webContents.send('remove-dark-overlay')
   }
 }
 
-ipc.on('show-settings', showSettingsWindow);
+ipc.on('show-settings', showSettingsWindow)
 ipc.on('close-settings', () => {
   if (settingsWindow) {
-    settingsWindow.close();
+    settingsWindow.close()
   }
-});
+})
 
-installSettingsGetter('device-name');
+installSettingsGetter('device-name')
 
-installSettingsGetter('theme-setting');
-installSettingsSetter('theme-setting');
-installSettingsGetter('hide-menu-bar');
-installSettingsSetter('hide-menu-bar');
+installSettingsGetter('theme-setting')
+installSettingsSetter('theme-setting')
+installSettingsGetter('hide-menu-bar')
+installSettingsSetter('hide-menu-bar')
 
-installSettingsGetter('notification-setting');
-installSettingsSetter('notification-setting');
-installSettingsGetter('notification-draw-attention');
-installSettingsSetter('notification-draw-attention');
-installSettingsGetter('audio-notification');
-installSettingsSetter('audio-notification');
-installSettingsGetter('badge-count-muted-conversations');
-installSettingsSetter('badge-count-muted-conversations');
+installSettingsGetter('notification-setting')
+installSettingsSetter('notification-setting')
+installSettingsGetter('notification-draw-attention')
+installSettingsSetter('notification-draw-attention')
+installSettingsGetter('audio-notification')
+installSettingsSetter('audio-notification')
+installSettingsGetter('badge-count-muted-conversations')
+installSettingsSetter('badge-count-muted-conversations')
 
-installSettingsGetter('spell-check');
-installSettingsSetter('spell-check', true);
+installSettingsGetter('spell-check')
+installSettingsSetter('spell-check', true)
 
-installSettingsGetter('always-relay-calls');
-installSettingsSetter('always-relay-calls');
-installSettingsGetter('call-ringtone-notification');
-installSettingsSetter('call-ringtone-notification');
-installSettingsGetter('call-system-notification');
-installSettingsSetter('call-system-notification');
-installSettingsGetter('incoming-call-notification');
-installSettingsSetter('incoming-call-notification');
+installSettingsGetter('always-relay-calls')
+installSettingsSetter('always-relay-calls')
+installSettingsGetter('call-ringtone-notification')
+installSettingsSetter('call-ringtone-notification')
+installSettingsGetter('call-system-notification')
+installSettingsSetter('call-system-notification')
+installSettingsGetter('incoming-call-notification')
+installSettingsSetter('incoming-call-notification')
 
 // These ones are different because its single source of truth is userConfig,
 // not IndexedDB
@@ -1634,162 +1665,162 @@ ipc.on('get-media-permissions', event => {
     'get-success-media-permissions',
     null,
     userConfig.get('mediaPermissions') || false
-  );
-});
+  )
+})
 ipc.on('get-media-camera-permissions', event => {
   event.sender.send(
     'get-success-media-camera-permissions',
     null,
     userConfig.get('mediaCameraPermissions') || false
-  );
-});
+  )
+})
 ipc.on('set-media-permissions', (event, value) => {
-  userConfig.set('mediaPermissions', value);
+  userConfig.set('mediaPermissions', value)
 
   // We reinstall permissions handler to ensure that a revoked permission takes effect
-  installPermissionsHandler({ session, userConfig });
+  installPermissionsHandler({session, userConfig})
 
-  event.sender.send('set-success-media-permissions', null);
-});
+  event.sender.send('set-success-media-permissions', null)
+})
 ipc.on('set-media-camera-permissions', (event, value) => {
-  userConfig.set('mediaCameraPermissions', value);
+  userConfig.set('mediaCameraPermissions', value)
 
   // We reinstall permissions handler to ensure that a revoked permission takes effect
-  installPermissionsHandler({ session, userConfig });
+  installPermissionsHandler({session, userConfig})
 
-  event.sender.send('set-success-media-camera-permissions', null);
-});
+  event.sender.send('set-success-media-camera-permissions', null)
+})
 
-installSettingsGetter('is-primary');
-installSettingsGetter('sync-request');
-installSettingsGetter('sync-time');
-installSettingsSetter('sync-time');
+installSettingsGetter('is-primary')
+installSettingsGetter('sync-request')
+installSettingsGetter('sync-time')
+installSettingsSetter('sync-time')
 
 ipc.on('delete-all-data', () => {
   if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.send('delete-all-data');
+    mainWindow.webContents.send('delete-all-data')
   }
-});
+})
 
 ipc.on('get-built-in-images', async () => {
   try {
-    const images = await attachments.getBuiltInImages();
-    mainWindow.webContents.send('get-success-built-in-images', null, images);
+    const images = await attachments.getBuiltInImages()
+    mainWindow.webContents.send('get-success-built-in-images', null, images)
   } catch (error) {
     if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('get-success-built-in-images', error.message);
+      mainWindow.webContents.send('get-success-built-in-images', error.message)
     } else {
-      console.error('Error handling get-built-in-images:', error.stack);
+      console.error('Error handling get-built-in-images:', error.stack)
     }
   }
-});
+})
 
 // Ingested in preload.js via a sendSync call
 ipc.on('locale-data', event => {
   // eslint-disable-next-line no-param-reassign
-  event.returnValue = locale.messages;
-});
+  event.returnValue = locale.messages
+})
 
 ipc.on('user-config-key', event => {
   // eslint-disable-next-line no-param-reassign
-  event.returnValue = userConfig.get('key');
-});
+  event.returnValue = userConfig.get('key')
+})
 
 ipc.on('get-user-data-path', event => {
   // eslint-disable-next-line no-param-reassign
-  event.returnValue = app.getPath('userData');
-});
+  event.returnValue = app.getPath('userData')
+})
 
 function getDataFromMainWindow(name, callback) {
   ipc.once(`get-success-${name}`, (_event, error, value) =>
     callback(error, value)
-  );
-  mainWindow.webContents.send(`get-${name}`);
+  )
+  mainWindow.webContents.send(`get-${name}`)
 }
 
 function installSettingsGetter(name) {
   ipc.on(`get-${name}`, event => {
     if (mainWindow && mainWindow.webContents) {
       getDataFromMainWindow(name, (error, value) => {
-        const contents = event.sender;
+        const contents = event.sender
         if (contents.isDestroyed()) {
-          return;
+          return
         }
 
-        contents.send(`get-success-${name}`, error, value);
-      });
+        contents.send(`get-success-${name}`, error, value)
+      })
     }
-  });
+  })
 }
 
 function installSettingsSetter(name, isEphemeral = false) {
   ipc.on(`set-${name}`, (event, value) => {
     if (isEphemeral) {
-      ephemeralConfig.set('spell-check', value);
+      ephemeralConfig.set('spell-check', value)
     }
 
     if (mainWindow && mainWindow.webContents) {
       ipc.once(`set-success-${name}`, (_event, error) => {
-        const contents = event.sender;
+        const contents = event.sender
         if (contents.isDestroyed()) {
-          return;
+          return
         }
 
-        contents.send(`set-success-${name}`, error);
-      });
-      mainWindow.webContents.send(`set-${name}`, value);
+        contents.send(`set-success-${name}`, error)
+      })
+      mainWindow.webContents.send(`set-${name}`, value)
     }
-  });
+  })
 }
 
 function getIncomingHref(argv) {
-  return argv.find(arg => isSgnlHref(arg, logger));
+  return argv.find(arg => isSgnlHref(arg, logger))
 }
 
 function handleSgnlHref(incomingHref) {
-  let command;
-  let args;
-  let hash;
+  let command
+  let args
+  let hash
 
   if (isSgnlHref(incomingHref)) {
-    ({ command, args, hash } = parseSgnlHref(incomingHref, logger));
+    ({command, args, hash} = parseSgnlHref(incomingHref, logger))
   } else if (isSignalHttpsLink(incomingHref)) {
-    ({ command, args, hash } = parseSignalHttpsLink(incomingHref, logger));
+    ({command, args, hash} = parseSignalHttpsLink(incomingHref, logger))
   }
 
   if (command === 'addstickers' && mainWindow && mainWindow.webContents) {
-    console.log('Opening sticker pack from sgnl protocol link');
-    const packId = args.get('pack_id');
-    const packKeyHex = args.get('pack_key');
+    console.log('Opening sticker pack from sgnl protocol link')
+    const packId = args.get('pack_id')
+    const packKeyHex = args.get('pack_key')
     const packKey = packKeyHex
       ? Buffer.from(packKeyHex, 'hex').toString('base64')
-      : '';
-    mainWindow.webContents.send('show-sticker-pack', { packId, packKey });
+      : ''
+    mainWindow.webContents.send('show-sticker-pack', {packId, packKey})
   } else if (
     command === 'signal.group' &&
     hash &&
     mainWindow &&
     mainWindow.webContents
   ) {
-    console.log('Showing group from sgnl protocol link');
-    mainWindow.webContents.send('show-group-via-link', { hash });
+    console.log('Showing group from sgnl protocol link')
+    mainWindow.webContents.send('show-group-via-link', {hash})
   } else if (mainWindow && mainWindow.webContents) {
-    console.log('Showing warning that we cannot process link');
-    mainWindow.webContents.send('unknown-sgnl-link');
+    console.log('Showing warning that we cannot process link')
+    mainWindow.webContents.send('unknown-sgnl-link')
   } else {
-    console.error('Unhandled sgnl link');
+    console.error('Unhandled sgnl link')
   }
 }
 
 ipc.on('install-sticker-pack', (_event, packId, packKeyHex) => {
-  const packKey = Buffer.from(packKeyHex, 'hex').toString('base64');
-  mainWindow.webContents.send('install-sticker-pack', { packId, packKey });
-});
+  const packKey = Buffer.from(packKeyHex, 'hex').toString('base64')
+  mainWindow.webContents.send('install-sticker-pack', {packId, packKey})
+})
 
 ipc.on('ensure-file-permissions', async event => {
-  await ensureFilePermissions();
-  event.reply('ensure-file-permissions-done');
-});
+  await ensureFilePermissions()
+  event.reply('ensure-file-permissions-done')
+})
 
 /**
  * Ensure files in the user's data directory have the proper permissions.
@@ -1798,38 +1829,38 @@ ipc.on('ensure-file-permissions', async event => {
  * @param {string[]} [onlyFiles] - Only ensure permissions on these given files
  */
 async function ensureFilePermissions(onlyFiles) {
-  console.log('Begin ensuring permissions');
+  console.log('Begin ensuring permissions')
 
-  const start = Date.now();
-  const userDataPath = await getRealPath(app.getPath('userData'));
+  const start = Date.now()
+  const userDataPath = await getRealPath(app.getPath('userData'))
   // fast-glob uses `/` for all platforms
-  const userDataGlob = normalizePath(path.join(userDataPath, '**', '*'));
+  const userDataGlob = normalizePath(path.join(userDataPath, '**', '*'))
 
   // Determine files to touch
   const files = onlyFiles
     ? onlyFiles.map(f => path.join(userDataPath, f))
     : await fg(userDataGlob, {
-        markDirectories: true,
-        onlyFiles: false,
-        ignore: ['**/Singleton*'],
-      });
+      markDirectories: true,
+      onlyFiles: false,
+      ignore: ['**/Singleton*'],
+    })
 
-  console.log(`Ensuring file permissions for ${files.length} files`);
+  console.log(`Ensuring file permissions for ${files.length} files`)
 
   // Touch each file in a queue
-  const q = new PQueue({ concurrency: 5, timeout: 1000 * 60 * 2 });
+  const q = new PQueue({concurrency: 5, timeout: 1000 * 60 * 2})
   q.addAll(
     files.map(f => async () => {
-      const isDir = f.endsWith('/');
+      const isDir = f.endsWith('/')
       try {
-        await fs.chmod(path.normalize(f), isDir ? 0o700 : 0o600);
+        await fs.chmod(path.normalize(f), isDir ? 0o700 : 0o600)
       } catch (error) {
-        console.error('ensureFilePermissions: Error from chmod', error.message);
+        console.error('ensureFilePermissions: Error from chmod', error.message)
       }
     })
-  );
+  )
 
-  await q.onEmpty();
+  await q.onEmpty()
 
-  console.log(`Finish ensuring permissions in ${Date.now() - start}ms`);
+  console.log(`Finish ensuring permissions in ${Date.now() - start}ms`)
 }
