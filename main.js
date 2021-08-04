@@ -44,12 +44,7 @@ const {
 } = electron
 
 function checkUpdate() {
-  const message = {
-    error: {status: -1, msg: '检测更新查询异常'},
-    checking: {status: 0, msg: '正在检查更新...'},
-    updateAva: {status: 1, msg: '检测到新版本,正在下载,请稍后'},
-    updateNotAva: {status: 2, msg: '您现在使用的版本为最新版本,无需更新!'},
-  }
+  console.log('checkUpdate checkUpdate checkUpdate')
   autoUpdater.setFeedURL({
     'provider': 'github',
     'repo': 'signal-test-2',
@@ -58,46 +53,54 @@ function checkUpdate() {
 
   // eslint-disable-next-line more/no-then
 
-  autoUpdater.logger = logger;
-  autoUpdater.autoDownload = false;
-  autoUpdater.on('error', (error) => {
-    dialog.showErrorBox('ERROR' , error === null ? 'unknown' : (error.stack || error).toString());
-  });
-  autoUpdater.on('update-available', async () => {
-    const buttonIndex = await dialog.showMessageBox(win, {
-      type: 'info',
-      title: 'UPDATE_FOUND',
-      message: 'UPDATE_PROMPT',
-      buttons: ['YES', 'NO']
-    });
-    if (buttonIndex.response === 0) {
-      try {
-        autoUpdater.downloadUpdate();
-      } catch(err) {
-        await dialog.showMessageBox( {
-          type: 'info',
-          title: 'UPDATE_FOUND',
-          message: `UPDATE_ERROR${  err}`
-        })
-      }
-    }
-  });
+  autoUpdater.checkForUpdates();
 
-  autoUpdater.on('update-not-available', () => {
+  // 下面是自动更新的整个生命周期所发生的事件
+  autoUpdater.on('error', function(message) {
     dialog.showMessageBox({
-      title: 'UPDATE_NOT_AVAILABLE',
-      message: 'CURRENT_VERSION_OK'
-    });
+      type: 'info',
+      title: '自动更新失败',
+      message: message,
+    })
+  });
+  autoUpdater.on('checking-for-update', function(message) {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'checking-for-update',
+      message: message,
+    })
+  });
+  autoUpdater.on('update-available', function(message) {
+    autoUpdater.downloadUpdate()
+  });
+  autoUpdater.on('update-not-available', function(message) {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'update-not-available',
+      message: message,
+    })
   });
 
-  autoUpdater.on('update-downloaded', async () => {
-    await dialog.showMessageBox({
-      title: 'UPDATE_DOWNLOADED',
-      message: 'UPDATE_READY_TO_INSTALL_RESTARTING'
-    });
-    autoUpdater.quitAndInstall();
+  // 更新下载进度事件
+  // autoUpdater.on('download-progress', function(progressObj) {
+  //   sendUpdateMessage('downloadProgress', progressObj);
+  // });
+  // 更新下载完成事件
+  autoUpdater.on('update-downloaded', function(event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '应用更新',
+      message: '发现新版本，是否更新？',
+      buttons: ['是', '否'],
+    }).then((buttonIndex) => {
+      if (buttonIndex.response === 0) {
+        autoUpdater.quitAndInstall()
+        app.quit()
+      }
+    })
   });
 
+  //执行自动更新检查
 
 }
 
@@ -136,12 +139,6 @@ function downloadUpdate(cancellationToken) {
         console.log(error == null ? 'unknown' : (error.stack || error).toString())
       }
     })
-}
-
-
-function sendUpdateMessage(message, data) {
-  console.log({message, data});
-  webContents.send('message', {message, data});
 }
 
 function isNetworkError(errorObject) {
