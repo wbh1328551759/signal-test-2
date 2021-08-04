@@ -44,41 +44,58 @@ const {
 } = electron
 
 function checkUpdate() {
-  console.log('checkUpdate checkUpdate checkUpdate')
+  const message = {
+    error: {status: -1, msg: '检测更新查询异常'},
+    checking: {status: 0, msg: '正在检查更新...'},
+    updateAva: {status: 1, msg: '检测到新版本,正在下载,请稍后'},
+    updateNotAva: {status: 2, msg: '您现在使用的版本为最新版本,无需更新!'},
+  }
   autoUpdater.setFeedURL({
     'provider': 'github',
     'repo': 'signal-test-2',
     'owner': 'wbh1328551759'
   })
 
-  // eslint-disable-next-line more/no-then
-  autoUpdater.checkForUpdates()
-    .then((info) => {
-      downloadUpdate(info.cancellationToken)
+  autoUpdater.on('error', function (error) {
+    console.log(message.error)
+  })
+// 当开始检查更新的时候触发
+  autoUpdater.on('checking-for-update', function () {
+    sendUpdateMessage(message.checking)
+  })
+// 当发现有可用更新的时候触发，更新包下载会自动开始
+  autoUpdater.on('update-available', function (info) {
+    sendUpdateMessage(message.updateAva)
+  })
+// 当发现版本为最新版本触发
+  autoUpdater.on('update-not-available', function (info) {
+    sendUpdateMessage(message.updateNotAva)
+  })
+  // 更新下载进度事件
+  autoUpdater.on('download-progress', function (progressObj) {
+    mainWindow.webContents.send('downloadProgress', progressObj)
+  })
+  // 包下载成功时触发
+  autoUpdater.on('update-downloaded', function (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) {
+    // 收到renderer进程确认更新
+    ipc.on('updateNow', (e, arg) => {
+      console.log('开始更新')
+      autoUpdater.quitAndInstall() // 包下载完成后，重启当前的应用并且安装更新
     })
-    .catch((error) => {
-      if (isNetworkError(error)) {
-        if (isNetworkError(error)) {
-          dialog.showMessageBox({
-            type: 'info',
-            title: '自动更新失败',
-            message: '自动更新失败，请自行前往官网下载最新版本',
-          })
-        } else {
-          console.log('Unknown Error')
-          if (isNetworkError(error)) {
-            dialog.showMessageBox({
-              type: 'info',
-              title: '自动更新失败',
-              message: '自动更新失败，请自行前往官网下载最新版本',
-            })
+    // 主进程向renderer进程发送是否确认更新
+    mainWindow.webContents.send('isUpdateNow')
+  })
 
-            console.log(error == null ? 'unknown' : (error.stack || error).toString())
-          }
-        }
-      }
-    })
+  ipc.on('checkForUpdate', () => {
+    // 收到renderer进程的检查通知后，执行自动更新检查
+    autoUpdater.checkForUpdates()
+  })
+
 }
+function sendUpdateMessage (text) {
+  mainWindow.webContents.send('message', text)
+}
+
 
 function downloadUpdate(cancellationToken) {
   // eslint-disable-next-line more/no-then
