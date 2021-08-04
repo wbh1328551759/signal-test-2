@@ -56,46 +56,50 @@ function checkUpdate() {
     'owner': 'wbh1328551759'
   })
 
-  autoUpdater.on('error', function (error) {
-    console.log(message.error)
-  })
-// 当开始检查更新的时候触发
-  autoUpdater.on('checking-for-update', function () {
-    sendUpdateMessage(message.checking)
-  })
-// 当发现有可用更新的时候触发，更新包下载会自动开始
-  autoUpdater.on('update-available', function (info) {
-    sendUpdateMessage(message.updateAva)
-  })
-// 当发现版本为最新版本触发
-  autoUpdater.on('update-not-available', function (info) {
-    sendUpdateMessage(message.updateNotAva)
-  })
-  // 更新下载进度事件
-  autoUpdater.on('download-progress', function (progressObj) {
-    mainWindow.webContents.send('downloadProgress', progressObj)
-  })
-  // 包下载成功时触发
-  autoUpdater.on('update-downloaded', function (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) {
-    // 收到renderer进程确认更新
-    ipc.on('updateNow', (e, arg) => {
-      console.log('开始更新')
-      autoUpdater.quitAndInstall() // 包下载完成后，重启当前的应用并且安装更新
-    })
-    // 主进程向renderer进程发送是否确认更新
-    mainWindow.webContents.send('isUpdateNow')
-  })
+  // eslint-disable-next-line more/no-then
 
-  ipc.on('checkForUpdate', () => {
-    // 收到renderer进程的检查通知后，执行自动更新检查
-    autoUpdater.checkForUpdates()
-  })
+  autoUpdater.logger = logger;
+  autoUpdater.autoDownload = false;
+  autoUpdater.on('error', (error) => {
+    dialog.showErrorBox('ERROR' , error === null ? 'unknown' : (error.stack || error).toString());
+  });
+  autoUpdater.on('update-available', async () => {
+    const buttonIndex = await dialog.showMessageBox(win, {
+      type: 'info',
+      title: 'UPDATE_FOUND',
+      message: 'UPDATE_PROMPT',
+      buttons: ['YES', 'NO']
+    });
+    if (buttonIndex.response === 0) {
+      try {
+        autoUpdater.downloadUpdate();
+      } catch(err) {
+        await dialog.showMessageBox( {
+          type: 'info',
+          title: 'UPDATE_FOUND',
+          message: `UPDATE_ERROR${  err}`
+        })
+      }
+    }
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    dialog.showMessageBox({
+      title: 'UPDATE_NOT_AVAILABLE',
+      message: 'CURRENT_VERSION_OK'
+    });
+  });
+
+  autoUpdater.on('update-downloaded', async () => {
+    await dialog.showMessageBox({
+      title: 'UPDATE_DOWNLOADED',
+      message: 'UPDATE_READY_TO_INSTALL_RESTARTING'
+    });
+    autoUpdater.quitAndInstall();
+  });
+
 
 }
-function sendUpdateMessage (text) {
-  mainWindow.webContents.send('message', text)
-}
-
 
 function downloadUpdate(cancellationToken) {
   // eslint-disable-next-line more/no-then
@@ -132,6 +136,12 @@ function downloadUpdate(cancellationToken) {
         console.log(error == null ? 'unknown' : (error.stack || error).toString())
       }
     })
+}
+
+
+function sendUpdateMessage(message, data) {
+  console.log({message, data});
+  webContents.send('message', {message, data});
 }
 
 function isNetworkError(errorObject) {
